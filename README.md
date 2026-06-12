@@ -1,27 +1,68 @@
-# Simulaciones Mundial 2026
-Código para hacer el web scrapping de las estadísticas de los últimos partidos de selecciones, ajustar un modelo XGBoost para predecir los resultados y una simulación de Montecarlo de 10.000 mundiales simulados para predecir quién ganará y el performance esperado de cada selección. A mayores se incluyen todos los datos scrappeados. Iré actualizando y explicando todo más en detalle en `@jyts__`. 
+# Simulaciones Mundial 2026 ⚽🏆
 
-# 🏆 Predicción de los 104 partidos del Mundial 2026
-En la carpeta [`Predicciones/`](Predicciones/) está la **predicción completa del torneo** generada con el modelo de este repositorio (ejecutando `prediccion_mundial.py`, un port a script de los notebooks):
+¿Quién va a ganar el Mundial 2026? Este repositorio responde con datos: scrapea todo el histórico de estadísticas de las selecciones, entrena dos modelos XGBoost y simula **10.000 mundiales** con Monte Carlo para estimar el rendimiento esperado de cada selección — hasta predecir los 104 partidos del torneo. Iré actualizando y explicando todo más en detalle en `@jyts__`.
 
-- [`PREDICCIONES.md`](Predicciones/PREDICCIONES.md) — informe con los 104 partidos: 72 de fase de grupos (marcador más probable + probabilidades 1X2), clasificaciones predichas, cuadro completo de eliminatorias hasta la final y probabilidades de campeón por selección.
-- `predicciones_fase_grupos.csv`, `clasificacion_grupos.csv`, `predicciones_eliminatorias.csv`, `probabilidades_montecarlo.csv` — los mismos resultados en formato datos.
+---
 
-Para regenerarlas: `python prediccion_mundial.py && python generar_informe.py` (entrena los modelos si no existen los `.pkl` y corre 10.000 simulaciones de Monte Carlo).
+## 🔄 El pipeline, paso a paso
 
-# Instrucciones de Uso
-## 1. Extracción de Datos (Scraping)
-Si deseas actualizar el histórico de partidos o replicar la captura de datos desde cero, ejecuta el script `Scrapper.py`.
+### 1️⃣ Scraping — [`01_Scraping/`](01_Scraping/)
+Un scraper (Selenium + BeautifulSoup) se descarga **todo el histórico de estadísticas de FlashScore**: resultados, xG, posesión, remates a puerta, córneres, faltas, paradas, pases... de los últimos partidos de cada selección, más el ranking FIFA. Si no quieres scrapear desde cero, los datos ya descargados están en [`Data/`](Data/).
 
-Si no, tienes disponibles los datos descargados en la carpeta `/Data`.
+### 2️⃣ Limpieza de datos — [`02_Limpieza_Datos/`](02_Limpieza_Datos/)
+El notebook `Data Cleaning.ipynb` hace el JOIN de las distintas fuentes descargadas y una buena limpieza para **pasar del HTML scrapeado en bruto a un dataset modelable**: una fila por partido con las estadísticas de los dos equipos.
 
-## 2. Limpieza de Datos
-El Notebook `Data Cleaning.ipynb` se encarga de hacer el JOIN de los distintos datos descragados y de la limpieza y construcción de variables para la posterior modelización. 
+### 3️⃣ Ingeniería de variables
+Sobre los datos limpios se construyen **medias móviles (últimos 5 partidos e histórico), ratios y diferencias** entre equipos para capturar el *estado de forma* de cada selección justo antes del partido: diferencia de puntos Elo/FIFA, probabilidad implícita del Elo, tiers de nivel, pesos por confederación y diferenciales de cada estadística. Eso es lo que el modelo "ve" para predecir el resultado.
 
-## 3. Ejecución del Modelo y Simulación de Momte Carlo
-Tienes el Notebook `Modelling.ipynb` para ejecutar la ingeniería de variables, el entrenamiento de los modelos y correr las simulaciones de Montecarlo. 
+### 4️⃣ Dos modelos XGBoost — [`03_Modelado_Simulacion/`](03_Modelado_Simulacion/)
+Con los datos listos, en `Modelling.ipynb` se entrenan dos modelos:
 
-## 4. Inspírate!
-Aprovecha este proyecto para hacer algo aún más profundo a partir de el. Hay muchas mejoras posibles, desde incorporar más datos a considerar otros modelos u otros approaches para toda la modelización y simulación. 
+1. **Modelo de goles**: dos regresores XGBoost con objetivo Tweedie (a medio camino entre Poisson y Gamma, ideal para fútbol) que predicen los goles esperados de cada equipo.
+2. **Modelo de resultado**: un clasificador XGBoost 1X2 que usa como meta-variables las predicciones de goles del primero, con **probabilidades calibradas** (calibración isotónica) y validación temporal para no mezclar pasado y futuro.
 
-Estaré encantado de que me cuentes lo que has construido en `@jyts__`
+### 5️⃣ El comportamiento estocástico: Monte Carlo con 10.000 mundiales
+¿Por qué no basta con simular un mundial? Porque la realidad es **estocástica**. Si solo simulásemos uno, una selección con el 51% de probabilidades de pasar, pasaría exactamente igual que una con el 99%. Para capturar el efecto de la varianza, simulamos **10.000 mundiales diferentes**: el equipo del 51% se clasifica en ~5.100 de ellos y el del 99% en ~9.900. Así vemos el efecto de las probabilidades en todos los cruces que tendríamos hasta la final — fase de grupos partido a partido, mejores terceros, dieciseisavos, octavos, cuartos, semifinales y final.
+
+### 6️⃣ Predicción de los 104 partidos — [`04_Prediccion/`](04_Prediccion/) → [`Predicciones/`](Predicciones/)
+`prediccion_mundial.py` es el pipeline completo en un script: entrena los modelos (si no existen los `.pkl`), predice los 72 partidos de la fase de grupos, construye el cuadro completo de eliminatorias con el resultado más probable de cada cruce (incluido el 3er puesto) y corre el Monte Carlo. `generar_informe.py` lo convierte en un informe legible.
+
+**Resultados** en [`Predicciones/PREDICCIONES.md`](Predicciones/PREDICCIONES.md): marcador más probable y probabilidades 1X2 de los 104 partidos, clasificaciones de los 12 grupos, cuadro hasta la final y probabilidades de campeón por selección (los mismos datos en CSV en la misma carpeta).
+
+---
+
+## 📂 Estructura del repositorio
+
+```
+├── 01_Scraping/              # Extracción de datos de FlashScore (Selenium)
+│   └── Scrapper.py
+├── 02_Limpieza_Datos/        # JOIN y limpieza → dataset modelable
+│   └── Data Cleaning.ipynb
+├── 03_Modelado_Simulacion/   # Ingeniería de variables, XGBoost y Monte Carlo
+│   └── Modelling.ipynb
+├── 04_Prediccion/            # Pipeline end-to-end en script
+│   ├── prediccion_mundial.py
+│   └── generar_informe.py
+├── Data/                     # Datos scrapeados y procesados (CSV)
+└── Predicciones/             # Predicción de los 104 partidos + Monte Carlo
+    └── PREDICCIONES.md
+```
+
+## 🚀 Replicarlo
+
+```bash
+pip install pandas numpy xgboost scikit-learn joblib tqdm
+
+# (Opcional) actualizar los datos desde cero
+python 01_Scraping/Scrapper.py
+
+# Limpieza y modelado explicados paso a paso: notebooks 02 y 03
+
+# Predicción completa del Mundial (entrena + simula 10.000 mundiales)
+python 04_Prediccion/prediccion_mundial.py
+python 04_Prediccion/generar_informe.py
+```
+
+## 💡 Inspírate
+
+Aprovecha este proyecto para hacer algo aún más profundo a partir de él: incorporar más datos, probar otros modelos u otros enfoques para la modelización y la simulación. Estaré encantado de que me cuentes lo que has construido en `@jyts__`.

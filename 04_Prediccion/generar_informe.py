@@ -2,8 +2,11 @@
 """Genera Predicciones/PREDICCIONES.md a partir de los CSVs producidos por
 `prediccion_mundial.py` (predicción puntual de los 104 partidos + Monte Carlo)."""
 
+import os
 import pandas as pd
 
+# El script vive en 04_Prediccion/; los resultados están en <raíz>/Predicciones/
+os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 RUTA = 'Predicciones/'
 
 grupos = pd.read_csv(RUTA + 'predicciones_fase_grupos.csv')

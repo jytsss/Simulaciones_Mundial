@@ -28,7 +28,8 @@ from sklearn.model_selection import RandomizedSearchCV, TimeSeriesSplit, cross_v
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.calibration import CalibratedClassifierCV
 
-RUTA = os.path.dirname(os.path.abspath(__file__))
+# El script vive en 04_Prediccion/; trabajamos desde la raíz del repo
+RUTA = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(RUTA)
 os.makedirs('Predicciones', exist_ok=True)
 
