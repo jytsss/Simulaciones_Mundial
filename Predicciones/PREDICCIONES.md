@@ -1,0 +1,379 @@
+# 🏆 Predicción completa del Mundial 2026 — los 104 partidos
+
+Generado con el modelo de este repositorio: regresores XGBoost (Tweedie) de goles + clasificador 1X2 XGBoost calibrado (isotónico), predicción a sede neutral con "efecto espejo", temperatura `T=0.27` en grupos y `T=0.5` en eliminatorias, y simulación de **Monte Carlo de 10.000 mundiales** para las probabilidades por selección.
+
+> ⚠️ Predicción generada el 12-jun-2026, con los datos del repo (anteriores al torneo). La asignación de mejores terceros al cuadro usa la simplificación del notebook (ranking 1º-8º a huecos fijos), no la tabla oficial de la FIFA.
+
+## Resumen
+
+| | |
+|---|---|
+| 🥇 **Campeón predicho** | **🇫🇷 Francia** |
+| 🥈 Subcampeón | 🇦🇷 Argentina |
+| 🥉 Tercer puesto | 🇪🇸 España |
+
+### Probabilidades de ser campeón (Top 10, Monte Carlo)
+
+| # | Selección | Campeón | Final | Semis | Cuartos |
+|---|---|---|---|---|---|
+| 1 | 🇫🇷 Francia | **28.6%** | 39.4% | 60.2% | 70.5% |
+| 2 | 🇪🇸 España | **20.2%** | 32.6% | 54.6% | 64.1% |
+| 3 | 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra | **17.8%** | 39.4% | 64.8% | 82.2% |
+| 4 | 🇦🇷 Argentina | **16.4%** | 33.1% | 52.7% | 70.2% |
+| 5 | 🇵🇹 Portugal | **4.0%** | 13.8% | 33.7% | 72.6% |
+| 6 | 🇩🇪 Alemania | **4.0%** | 8.5% | 17.9% | 30.2% |
+| 7 | 🇧🇪 Bélgica | **3.0%** | 7.8% | 24.3% | 74.6% |
+| 8 | 🇳🇱 Países Bajos | **2.3%** | 6.0% | 15.5% | 44.6% |
+| 9 | 🇭🇷 Croacia | **0.9%** | 3.5% | 12.2% | 24.3% |
+| 10 | 🇧🇷 Brasil | **0.6%** | 3.7% | 11.3% | 41.7% |
+
+## Fase de grupos — 72 partidos
+
+Marcador = marcador exacto más probable según los goles esperados del modelo, condicionado al resultado 1X2 más probable.
+
+### Grupo A
+
+| Fecha | Partido | Pred. | P(1) | P(X) | P(2) |
+|---|---|:-:|--:|--:|--:|
+| 06-11 | 🇲🇽 México – 🇿🇦 Sudáfrica | **1-0** | 85% | 12% | 4% |
+| 06-12 | 🇰🇷 Corea del Sur – 🇨🇿 República Checa | **1-0** | 68% | 24% | 8% |
+| 06-18 | 🇨🇿 República Checa – 🇿🇦 Sudáfrica | **0-1** | 39% | 20% | 41% |
+| 06-19 | 🇲🇽 México – 🇰🇷 Corea del Sur | **1-0** | 60% | 32% | 9% |
+| 06-25 | 🇿🇦 Sudáfrica – 🇰🇷 Corea del Sur | **0-1** | 4% | 32% | 64% |
+| 06-25 | 🇨🇿 República Checa – 🇲🇽 México | **0-1** | 3% | 9% | 88% |
+
+| Pos | Equipo | Pts | DG (xG) |
+|---|---|--:|--:|
+| 1 | 🇲🇽 México ✅ | 9 | +1.48 |
+| 2 | 🇰🇷 Corea del Sur ✅ | 6 | +0.54 |
+| 3 | 🇿🇦 Sudáfrica 🟡 | 3 | -1.13 |
+| 4 | 🇨🇿 República Checa | 0 | -0.89 |
+
+### Grupo B
+
+| Fecha | Partido | Pred. | P(1) | P(X) | P(2) |
+|---|---|:-:|--:|--:|--:|
+| 06-12 | 🇨🇦 Canadá – 🇧🇦 Bosnia-Herzegovina | **1-0** | 77% | 20% | 3% |
+| 06-13 | 🇶🇦 Catar – 🇨🇭 Suiza | **0-1** | 1% | 8% | 91% |
+| 06-18 | 🇨🇭 Suiza – 🇧🇦 Bosnia-Herzegovina | **2-1** | 74% | 16% | 11% |
+| 06-19 | 🇨🇦 Canadá – 🇶🇦 Catar | **1-0** | 68% | 29% | 3% |
+| 06-24 | 🇧🇦 Bosnia-Herzegovina – 🇶🇦 Catar | **1-0** | 39% | 28% | 33% |
+| 06-24 | 🇨🇭 Suiza – 🇨🇦 Canadá | **1-0** | 35% | 31% | 34% |
+
+| Pos | Equipo | Pts | DG (xG) |
+|---|---|--:|--:|
+| 1 | 🇨🇭 Suiza ✅ | 9 | +1.79 |
+| 2 | 🇨🇦 Canadá ✅ | 6 | +0.98 |
+| 3 | 🇧🇦 Bosnia-Herzegovina 🟡 | 3 | -1.02 |
+| 4 | 🇶🇦 Catar | 0 | -1.75 |
+
+### Grupo C
+
+| Fecha | Partido | Pred. | P(1) | P(X) | P(2) |
+|---|---|:-:|--:|--:|--:|
+| 06-14 | 🇧🇷 Brasil – 🇲🇦 Marruecos | **0-1** | 39% | 18% | 42% |
+| 06-14 | 🇭🇹 Haití – 🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia | **0-1** | 4% | 7% | 89% |
+| 06-20 | 🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia – 🇲🇦 Marruecos | **0-1** | 3% | 10% | 87% |
+| 06-20 | 🇧🇷 Brasil – 🇭🇹 Haití | **2-0** | 99% | 1% | 0% |
+| 06-25 | 🇲🇦 Marruecos – 🇭🇹 Haití | **2-0** | 97% | 2% | 0% |
+| 06-25 | 🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia – 🇧🇷 Brasil | **1-2** | 1% | 7% | 92% |
+
+| Pos | Equipo | Pts | DG (xG) |
+|---|---|--:|--:|
+| 1 | 🇲🇦 Marruecos ✅ | 9 | +2.57 |
+| 2 | 🇧🇷 Brasil ✅ | 6 | +2.96 |
+| 3 | 🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia 🟡 | 3 | -0.89 |
+| 4 | 🇭🇹 Haití | 0 | -4.64 |
+
+### Grupo D
+
+| Fecha | Partido | Pred. | P(1) | P(X) | P(2) |
+|---|---|:-:|--:|--:|--:|
+| 06-13 | 🇺🇸 EE. UU. – 🇵🇾 Paraguay | **1-0** | 63% | 28% | 10% |
+| 06-14 | 🇦🇺 Australia – 🇹🇷 Turquía | **0-1** | 26% | 20% | 54% |
+| 06-19 | 🇺🇸 EE. UU. – 🇦🇺 Australia | **1-0** | 54% | 24% | 22% |
+| 06-20 | 🇹🇷 Turquía – 🇵🇾 Paraguay | **1-0** | 84% | 11% | 5% |
+| 06-26 | 🇵🇾 Paraguay – 🇦🇺 Australia | **0-1** | 8% | 17% | 76% |
+| 06-26 | 🇹🇷 Turquía – 🇺🇸 EE. UU. | **1-0** | 48% | 26% | 26% |
+
+| Pos | Equipo | Pts | DG (xG) |
+|---|---|--:|--:|
+| 1 | 🇹🇷 Turquía ✅ | 9 | +1.36 |
+| 2 | 🇺🇸 EE. UU. ✅ | 6 | +0.75 |
+| 3 | 🇦🇺 Australia 🟡 | 3 | -0.37 |
+| 4 | 🇵🇾 Paraguay | 0 | -1.74 |
+
+### Grupo E
+
+| Fecha | Partido | Pred. | P(1) | P(X) | P(2) |
+|---|---|:-:|--:|--:|--:|
+| 06-14 | 🇩🇪 Alemania – 🇨🇼 Curazao | **2-0** | 99% | 1% | 0% |
+| 06-15 | 🇨🇮 Costa de Marfil – 🇪🇨 Ecuador | **1-0** | 58% | 23% | 19% |
+| 06-20 | 🇩🇪 Alemania – 🇨🇮 Costa de Marfil | **1-0** | 89% | 9% | 2% |
+| 06-21 | 🇪🇨 Ecuador – 🇨🇼 Curazao | **1-0** | 95% | 4% | 1% |
+| 06-25 | 🇨🇼 Curazao – 🇨🇮 Costa de Marfil | **0-1** | 0% | 4% | 95% |
+| 06-25 | 🇪🇨 Ecuador – 🇩🇪 Alemania | **0-1** | 1% | 8% | 91% |
+
+| Pos | Equipo | Pts | DG (xG) |
+|---|---|--:|--:|
+| 1 | 🇩🇪 Alemania ✅ | 9 | +3.65 |
+| 2 | 🇨🇮 Costa de Marfil ✅ | 6 | +0.83 |
+| 3 | 🇪🇨 Ecuador 🟡 | 3 | -0.00 |
+| 4 | 🇨🇼 Curazao | 0 | -4.48 |
+
+### Grupo F
+
+| Fecha | Partido | Pred. | P(1) | P(X) | P(2) |
+|---|---|:-:|--:|--:|--:|
+| 06-14 | 🇳🇱 Países Bajos – 🇯🇵 Japón | **1-0** | 63% | 29% | 9% |
+| 06-15 | 🇸🇪 Suecia – 🇹🇳 Túnez | **1-0** | 46% | 32% | 23% |
+| 06-20 | 🇳🇱 Países Bajos – 🇸🇪 Suecia | **2-1** | 90% | 8% | 2% |
+| 06-21 | 🇹🇳 Túnez – 🇯🇵 Japón | **0-1** | 2% | 3% | 95% |
+| 06-26 | 🇯🇵 Japón – 🇸🇪 Suecia | **1-0** | 92% | 8% | 1% |
+| 06-26 | 🇹🇳 Túnez – 🇳🇱 Países Bajos | **0-1** | 0% | 5% | 95% |
+
+| Pos | Equipo | Pts | DG (xG) |
+|---|---|--:|--:|
+| 1 | 🇳🇱 Países Bajos ✅ | 9 | +2.11 |
+| 2 | 🇯🇵 Japón ✅ | 6 | +0.96 |
+| 3 | 🇸🇪 Suecia 🟡 | 3 | -1.45 |
+| 4 | 🇹🇳 Túnez | 0 | -1.62 |
+
+### Grupo G
+
+| Fecha | Partido | Pred. | P(1) | P(X) | P(2) |
+|---|---|:-:|--:|--:|--:|
+| 06-15 | 🇧🇪 Bélgica – 🇪🇬 Egipto | **1-0** | 94% | 5% | 1% |
+| 06-16 | 🇮🇷 Irán – 🇳🇿 Nueva Zelanda | **1-0** | 91% | 8% | 1% |
+| 06-21 | 🇧🇪 Bélgica – 🇮🇷 Irán | **1-0** | 76% | 21% | 3% |
+| 06-22 | 🇳🇿 Nueva Zelanda – 🇪🇬 Egipto | **0-1** | 1% | 8% | 91% |
+| 06-27 | 🇳🇿 Nueva Zelanda – 🇧🇪 Bélgica | **0-2** | 0% | 2% | 98% |
+| 06-27 | 🇪🇬 Egipto – 🇮🇷 Irán | **0-1** | 8% | 21% | 72% |
+
+| Pos | Equipo | Pts | DG (xG) |
+|---|---|--:|--:|
+| 1 | 🇧🇪 Bélgica ✅ | 9 | +3.13 |
+| 2 | 🇮🇷 Irán ✅ | 6 | +0.87 |
+| 3 | 🇪🇬 Egipto 🟡 | 3 | -0.63 |
+| 4 | 🇳🇿 Nueva Zelanda | 0 | -3.37 |
+
+### Grupo H
+
+| Fecha | Partido | Pred. | P(1) | P(X) | P(2) |
+|---|---|:-:|--:|--:|--:|
+| 06-15 | 🇪🇸 España – 🇨🇻 Cabo Verde | **2-0** | 92% | 7% | 0% |
+| 06-16 | 🇸🇦 Arabia Saudí – 🇺🇾 Uruguay | **0-2** | 0% | 4% | 96% |
+| 06-21 | 🇪🇸 España – 🇸🇦 Arabia Saudí | **2-0** | 98% | 2% | 0% |
+| 06-22 | 🇺🇾 Uruguay – 🇨🇻 Cabo Verde | **1-0** | 85% | 12% | 3% |
+| 06-27 | 🇺🇾 Uruguay – 🇪🇸 España | **0-1** | 1% | 14% | 84% |
+| 06-27 | 🇨🇻 Cabo Verde – 🇸🇦 Arabia Saudí | **1-0** | 64% | 19% | 17% |
+
+| Pos | Equipo | Pts | DG (xG) |
+|---|---|--:|--:|
+| 1 | 🇪🇸 España ✅ | 9 | +4.86 |
+| 2 | 🇺🇾 Uruguay ✅ | 6 | +1.29 |
+| 3 | 🇨🇻 Cabo Verde 🟡 | 3 | -2.33 |
+| 4 | 🇸🇦 Arabia Saudí | 0 | -3.82 |
+
+### Grupo I
+
+| Fecha | Partido | Pred. | P(1) | P(X) | P(2) |
+|---|---|:-:|--:|--:|--:|
+| 06-16 | 🇫🇷 Francia – 🇸🇳 Senegal | **1-0** | 85% | 12% | 2% |
+| 06-17 | 🇮🇶 Irak – 🇳🇴 Noruega | **0-1** | 1% | 4% | 95% |
+| 06-22 | 🇫🇷 Francia – 🇮🇶 Irak | **2-0** | 99% | 1% | 0% |
+| 06-23 | 🇳🇴 Noruega – 🇸🇳 Senegal | **0-1** | 16% | 27% | 57% |
+| 06-26 | 🇳🇴 Noruega – 🇫🇷 Francia | **0-2** | 1% | 5% | 94% |
+| 06-26 | 🇸🇳 Senegal – 🇮🇶 Irak | **1-0** | 96% | 3% | 1% |
+
+| Pos | Equipo | Pts | DG (xG) |
+|---|---|--:|--:|
+| 1 | 🇫🇷 Francia ✅ | 9 | +3.93 |
+| 2 | 🇸🇳 Senegal ✅ | 6 | +1.09 |
+| 3 | 🇳🇴 Noruega 🟡 | 3 | -0.97 |
+| 4 | 🇮🇶 Irak | 0 | -4.05 |
+
+### Grupo J
+
+| Fecha | Partido | Pred. | P(1) | P(X) | P(2) |
+|---|---|:-:|--:|--:|--:|
+| 06-17 | 🇦🇷 Argentina – 🇩🇿 Argelia | **1-0** | 92% | 7% | 2% |
+| 06-17 | 🇦🇹 Austria – 🇯🇴 Jordania | **1-0** | 98% | 2% | 0% |
+| 06-22 | 🇦🇷 Argentina – 🇦🇹 Austria | **1-0** | 68% | 23% | 9% |
+| 06-23 | 🇯🇴 Jordania – 🇩🇿 Argelia | **0-1** | 2% | 4% | 94% |
+| 06-28 | 🇩🇿 Argelia – 🇦🇹 Austria | **0-1** | 13% | 28% | 60% |
+| 06-28 | 🇯🇴 Jordania – 🇦🇷 Argentina | **0-2** | 0% | 0% | 100% |
+
+| Pos | Equipo | Pts | DG (xG) |
+|---|---|--:|--:|
+| 1 | 🇦🇷 Argentina ✅ | 9 | +3.74 |
+| 2 | 🇦🇹 Austria ✅ | 6 | +0.85 |
+| 3 | 🇩🇿 Argelia 🟡 | 3 | -0.05 |
+| 4 | 🇯🇴 Jordania | 0 | -4.54 |
+
+### Grupo K
+
+| Fecha | Partido | Pred. | P(1) | P(X) | P(2) |
+|---|---|:-:|--:|--:|--:|
+| 06-17 | 🇵🇹 Portugal – 🇨🇩 RD Congo | **1-0** | 97% | 2% | 1% |
+| 06-18 | 🇺🇿 Uzbekistán – 🇨🇴 Colombia | **0-1** | 2% | 8% | 90% |
+| 06-23 | 🇵🇹 Portugal – 🇺🇿 Uzbekistán | **2-0** | 95% | 5% | 1% |
+| 06-24 | 🇨🇴 Colombia – 🇨🇩 RD Congo | **1-0** | 90% | 7% | 3% |
+| 06-28 | 🇨🇩 RD Congo – 🇺🇿 Uzbekistán | **1-0** | 47% | 16% | 37% |
+| 06-28 | 🇨🇴 Colombia – 🇵🇹 Portugal | **0-1** | 5% | 14% | 81% |
+
+| Pos | Equipo | Pts | DG (xG) |
+|---|---|--:|--:|
+| 1 | 🇵🇹 Portugal ✅ | 9 | +2.93 |
+| 2 | 🇨🇴 Colombia ✅ | 6 | +1.06 |
+| 3 | 🇨🇩 RD Congo 🟡 | 3 | -1.43 |
+| 4 | 🇺🇿 Uzbekistán | 0 | -2.56 |
+
+### Grupo L
+
+| Fecha | Partido | Pred. | P(1) | P(X) | P(2) |
+|---|---|:-:|--:|--:|--:|
+| 06-17 | 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra – 🇭🇷 Croacia | **2-1** | 75% | 19% | 5% |
+| 06-18 | 🇬🇭 Ghana – 🇵🇦 Panamá | **0-1** | 4% | 15% | 81% |
+| 06-23 | 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra – 🇬🇭 Ghana | **2-0** | 98% | 2% | 0% |
+| 06-24 | 🇵🇦 Panamá – 🇭🇷 Croacia | **0-1** | 2% | 6% | 92% |
+| 06-27 | 🇭🇷 Croacia – 🇬🇭 Ghana | **2-0** | 96% | 4% | 0% |
+| 06-27 | 🇵🇦 Panamá – 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra | **0-2** | 0% | 2% | 97% |
+
+| Pos | Equipo | Pts | DG (xG) |
+|---|---|--:|--:|
+| 1 | 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra ✅ | 9 | +3.56 |
+| 2 | 🇭🇷 Croacia ✅ | 6 | +2.26 |
+| 3 | 🇵🇦 Panamá 🟡 | 3 | -2.12 |
+| 4 | 🇬🇭 Ghana | 0 | -3.70 |
+
+✅ clasificado directo · 🟡 tercero (pasan los 8 mejores)
+
+## Eliminatorias — 32 partidos
+
+Si el empate es el resultado más probable, el cruce se decide por penaltis a favor del equipo con mayor probabilidad de victoria.
+
+### Dieciseisavos de final (16 cruces) · *28 jun - 3 jul*
+
+| Cruce | Pred. | Avanza | P(1) | P(X) | P(2) |
+|---|:-:|---|--:|--:|--:|
+| 🇩🇪 Alemania – 🇪🇨 Ecuador | **1-0** | **🇩🇪 Alemania** | 74% | 20% | 7% |
+| 🇫🇷 Francia – 🇩🇿 Argelia | **1-0** | **🇫🇷 Francia** | 82% | 14% | 3% |
+| 🇰🇷 Corea del Sur – 🇨🇦 Canadá | **1-1 (pen)** | **🇰🇷 Corea del Sur** | 37% | 39% | 24% |
+| 🇳🇱 Países Bajos – 🇧🇷 Brasil | **1-2** | **🇧🇷 Brasil** | 33% | 30% | 37% |
+| 🇨🇴 Colombia – 🇭🇷 Croacia | **0-1** | **🇭🇷 Croacia** | 14% | 24% | 62% |
+| 🇪🇸 España – 🇦🇹 Austria | **2-1** | **🇪🇸 España** | 53% | 33% | 14% |
+| 🇹🇷 Turquía – 🇦🇺 Australia | **1-0** | **🇹🇷 Turquía** | 44% | 26% | 30% |
+| 🇧🇪 Bélgica – 🇪🇬 Egipto | **1-0** | **🇧🇪 Bélgica** | 78% | 15% | 7% |
+| 🇲🇦 Marruecos – 🇯🇵 Japón | **1-0** | **🇲🇦 Marruecos** | 48% | 31% | 21% |
+| 🇨🇮 Costa de Marfil – 🇸🇳 Senegal | **0-1** | **🇸🇳 Senegal** | 18% | 30% | 51% |
+| 🇲🇽 México – 🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia | **1-0** | **🇲🇽 México** | 75% | 20% | 6% |
+| 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra – 🇳🇴 Noruega | **2-1** | **🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra** | 71% | 20% | 9% |
+| 🇦🇷 Argentina – 🇺🇾 Uruguay | **1-0** | **🇦🇷 Argentina** | 64% | 25% | 12% |
+| 🇺🇸 EE. UU. – 🇮🇷 Irán | **0-1** | **🇮🇷 Irán** | 24% | 29% | 47% |
+| 🇨🇭 Suiza – 🇧🇦 Bosnia-Herzegovina | **2-1** | **🇨🇭 Suiza** | 56% | 24% | 20% |
+| 🇵🇹 Portugal – 🇿🇦 Sudáfrica | **1-0** | **🇵🇹 Portugal** | 76% | 16% | 8% |
+
+### Octavos de final · *4 - 7 jul*
+
+| Cruce | Pred. | Avanza | P(1) | P(X) | P(2) |
+|---|:-:|---|--:|--:|--:|
+| 🇩🇪 Alemania – 🇫🇷 Francia | **1-2** | **🇫🇷 Francia** | 19% | 34% | 48% |
+| 🇰🇷 Corea del Sur – 🇧🇷 Brasil | **0-1** | **🇧🇷 Brasil** | 14% | 38% | 48% |
+| 🇭🇷 Croacia – 🇪🇸 España | **1-2** | **🇪🇸 España** | 11% | 39% | 49% |
+| 🇹🇷 Turquía – 🇧🇪 Bélgica | **1-2** | **🇧🇪 Bélgica** | 13% | 31% | 56% |
+| 🇲🇦 Marruecos – 🇸🇳 Senegal | **0-1** | **🇸🇳 Senegal** | 35% | 29% | 36% |
+| 🇲🇽 México – 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra | **0-1** | **🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra** | 9% | 18% | 73% |
+| 🇦🇷 Argentina – 🇮🇷 Irán | **1-0** | **🇦🇷 Argentina** | 66% | 24% | 10% |
+| 🇨🇭 Suiza – 🇵🇹 Portugal | **1-2** | **🇵🇹 Portugal** | 16% | 25% | 59% |
+
+### Cuartos de final · *9 - 11 jul*
+
+| Cruce | Pred. | Avanza | P(1) | P(X) | P(2) |
+|---|:-:|---|--:|--:|--:|
+| 🇫🇷 Francia – 🇧🇷 Brasil | **1-0** | **🇫🇷 Francia** | 70% | 23% | 7% |
+| 🇪🇸 España – 🇧🇪 Bélgica | **2-1** | **🇪🇸 España** | 46% | 44% | 10% |
+| 🇸🇳 Senegal – 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra | **0-1** | **🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra** | 17% | 27% | 56% |
+| 🇦🇷 Argentina – 🇵🇹 Portugal | **2-1** | **🇦🇷 Argentina** | 43% | 39% | 18% |
+
+### Semifinales · *14 - 15 jul*
+
+| Cruce | Pred. | Avanza | P(1) | P(X) | P(2) |
+|---|:-:|---|--:|--:|--:|
+| 🇫🇷 Francia – 🇪🇸 España | **1-1 (pen)** | **🇫🇷 Francia** | 32% | 40% | 28% |
+| 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra – 🇦🇷 Argentina | **0-1** | **🇦🇷 Argentina** | 30% | 35% | 35% |
+
+### Partido por el 3er puesto · *18 jul*
+
+| Cruce | Pred. | Avanza | P(1) | P(X) | P(2) |
+|---|:-:|---|--:|--:|--:|
+| 🇪🇸 España – 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra | **1-1 (pen)** | **🇪🇸 España** | 35% | 40% | 25% |
+
+### 🏆 Gran Final — MetLife Stadium, Nueva York/Nueva Jersey · *19 jul*
+
+| Cruce | Pred. | Avanza | P(1) | P(X) | P(2) |
+|---|:-:|---|--:|--:|--:|
+| 🇫🇷 Francia – 🇦🇷 Argentina | **1-0** | **🇫🇷 Francia** | 42% | 32% | 26% |
+
+## Probabilidades por selección — 10.000 mundiales simulados
+
+| Selección | Pasa grupos | Octavos | Cuartos | Semis | Final | 🏆 Campeón |
+|---|--:|--:|--:|--:|--:|--:|
+| 🇫🇷 Francia | 100.0% | 94.5% | 70.5% | 60.2% | 39.4% | **28.6%** |
+| 🇪🇸 España | 100.0% | 78.0% | 64.1% | 54.6% | 32.6% | **20.2%** |
+| 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra | 100.0% | 93.7% | 82.2% | 64.8% | 39.4% | **17.8%** |
+| 🇦🇷 Argentina | 100.0% | 80.2% | 70.2% | 52.7% | 33.1% | **16.4%** |
+| 🇵🇹 Portugal | 100.0% | 88.9% | 72.6% | 33.7% | 13.8% | **4.0%** |
+| 🇩🇪 Alemania | 100.0% | 89.8% | 30.2% | 17.9% | 8.5% | **4.0%** |
+| 🇧🇪 Bélgica | 100.0% | 89.1% | 74.6% | 24.3% | 7.8% | **3.0%** |
+| 🇳🇱 Países Bajos | 99.9% | 55.0% | 44.6% | 15.5% | 6.0% | **2.3%** |
+| 🇭🇷 Croacia | 99.8% | 80.3% | 24.3% | 12.2% | 3.5% | **0.9%** |
+| 🇧🇷 Brasil | 100.0% | 63.4% | 41.7% | 11.3% | 3.7% | **0.6%** |
+| 🇸🇳 Senegal | 98.4% | 67.0% | 34.8% | 10.7% | 3.1% | **0.5%** |
+| 🇲🇦 Marruecos | 99.8% | 53.1% | 33.6% | 7.7% | 2.5% | **0.5%** |
+| 🇦🇹 Austria | 99.5% | 26.1% | 10.2% | 3.6% | 0.9% | **0.2%** |
+| 🇲🇽 México | 99.6% | 78.4% | 14.4% | 5.1% | 1.3% | **0.2%** |
+| 🇮🇷 Irán | 98.2% | 62.7% | 14.8% | 4.6% | 1.0% | **0.2%** |
+| 🇺🇾 Uruguay | 99.6% | 20.2% | 11.1% | 3.5% | 0.6% | **0.2%** |
+| 🇯🇵 Japón | 99.7% | 29.8% | 14.2% | 2.8% | 0.7% | **0.1%** |
+| 🇨🇭 Suiza | 98.8% | 63.8% | 17.2% | 3.4% | 0.5% | **0.1%** |
+| 🇹🇷 Turquía | 96.4% | 54.1% | 12.8% | 2.3% | 0.3% | **0.0%** |
+| 🇳🇴 Noruega | 92.1% | 26.4% | 6.6% | 1.4% | 0.3% | **0.0%** |
+| 🇨🇮 Costa de Marfil | 98.4% | 31.3% | 9.0% | 1.7% | 0.3% | **0.0%** |
+| 🇨🇴 Colombia | 99.2% | 22.4% | 6.2% | 1.8% | 0.2% | **0.0%** |
+| 🇺🇸 EE. UU. | 88.3% | 32.0% | 3.8% | 0.6% | 0.1% | **0.0%** |
+| 🇩🇿 Argelia | 94.7% | 14.8% | 2.8% | 0.4% | 0.1% | **0.0%** |
+| 🇨🇦 Canadá | 97.1% | 52.6% | 9.5% | 1.2% | 0.1% | **0.0%** |
+| 🇰🇷 Corea del Sur | 91.8% | 51.7% | 9.7% | 0.6% | 0.1% | **0.0%** |
+| 🇦🇺 Australia | 86.3% | 21.7% | 3.1% | 0.4% | 0.0% | **0.0%** |
+| 🇪🇨 Ecuador | 96.2% | 18.3% | 3.1% | 0.4% | 0.0% | **0.0%** |
+| 🇨🇩 RD Congo | 33.6% | 4.1% | 0.7% | 0.1% | 0.0% | **0.0%** |
+| 🇸🇪 Suecia | 26.1% | 3.4% | 0.7% | 0.1% | 0.0% | **0.0%** |
+| 🇨🇻 Cabo Verde | 20.3% | 2.5% | 0.4% | 0.0% | 0.0% | **0.0%** |
+| 🇨🇿 República Checa | 44.2% | 7.5% | 1.0% | 0.0% | 0.0% | **0.0%** |
+| 🇪🇬 Egipto | 91.4% | 14.8% | 2.0% | 0.2% | 0.0% | **0.0%** |
+| 🇿🇦 Sudáfrica | 39.0% | 6.6% | 0.8% | 0.1% | 0.0% | **0.0%** |
+| 🇧🇦 Bosnia-Herzegovina | 42.6% | 6.2% | 0.8% | 0.1% | 0.0% | **0.0%** |
+| 🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia | 87.4% | 7.1% | 0.6% | 0.0% | 0.0% | **0.0%** |
+| 🇵🇦 Panamá | 24.0% | 2.7% | 0.4% | 0.0% | 0.0% | **0.0%** |
+| 🇹🇳 Túnez | 12.2% | 1.7% | 0.3% | 0.0% | 0.0% | **0.0%** |
+| 🇵🇾 Paraguay | 10.8% | 1.4% | 0.2% | 0.0% | 0.0% | **0.0%** |
+| 🇺🇿 Uzbekistán | 8.6% | 0.8% | 0.1% | 0.0% | 0.0% | **0.0%** |
+| 🇸🇦 Arabia Saudí | 1.7% | 0.0% | 0.0% | 0.0% | 0.0% | **0.0%** |
+| 🇶🇦 Catar | 22.4% | 1.6% | 0.1% | 0.0% | 0.0% | **0.0%** |
+| 🇨🇼 Curazao | 0.1% | 0.0% | 0.0% | 0.0% | 0.0% | **0.0%** |
+| 🇬🇭 Ghana | 0.6% | 0.1% | 0.0% | 0.0% | 0.0% | **0.0%** |
+| 🇭🇹 Haití | 0.5% | 0.0% | 0.0% | 0.0% | 0.0% | **0.0%** |
+| 🇮🇶 Irak | 0.2% | 0.0% | 0.0% | 0.0% | 0.0% | **0.0%** |
+| 🇯🇴 Jordania | 0.2% | 0.0% | 0.0% | 0.0% | 0.0% | **0.0%** |
+| 🇳🇿 Nueva Zelanda | 0.3% | 0.0% | 0.0% | 0.0% | 0.0% | **0.0%** |
+
+## Validación con los partidos ya jugados
+
+| Partido | Predicción del modelo | Resultado real |
+|---|:-:|:-:|
+| 🇲🇽 México – 🇿🇦 Sudáfrica | 1-0 (P1 85%) | 2-0 ✅ ganador acertado |
+| 🇰🇷 Corea del Sur – 🇨🇿 República Checa | 1-0 (P1 68%) | 2-1 ✅ ganador acertado |
+
+---
+*Predicciones generadas automáticamente con `prediccion_mundial.py`. El fútbol, por suerte, no entiende de modelos.* ⚽

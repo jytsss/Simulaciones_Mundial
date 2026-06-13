@@ -1,0 +1,48 @@
+name: Actualizar predicciones y web
+
+on:
+  schedule:
+    - cron: '0 10 * * *'   # todos los días a las 10:00 UTC
+  workflow_dispatch: {}     # permite lanzarlo a mano desde la pestaña Actions
+  push:
+    branches: [main]
+    paths: ['Data/**', '04_Prediccion/**', '05_Web/**']
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias
+        run: pip install pandas numpy xgboost scikit-learn joblib tqdm
+
+      - name: Cache de modelos entrenados (evita reentrenar si no cambian los datos)
+        uses: actions/cache@v4
+        with:
+          path: |
+            *.pkl
+          key: modelos-${{ hashFiles('Data/datos_historicos.csv', '04_Prediccion/prediccion_mundial.py') }}
+
+      - name: Regenerar predicciones (entrena solo si no hay modelos en cache)
+        run: python 04_Prediccion/prediccion_mundial.py
+
+      - name: Regenerar informe y web
+        run: |
+          python 04_Prediccion/generar_informe.py
+          python 05_Web/generar_web.py
+
+      - name: Commit y push si hay cambios
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/ Predicciones/
+          git diff --cached --quiet || git commit -m "Actualización diaria automática de predicciones y web"
+          git push

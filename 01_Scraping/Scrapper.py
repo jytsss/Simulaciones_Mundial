@@ -161,7 +161,8 @@ if __name__ == "__main__":
     # Si la carpeta no existe, el código la creará por ti.
 
     # 1. El script detecta dónde está la carpeta principal del proyecto
-    carpeta_raiz = os.path.dirname(os.path.abspath(__file__))
+    # (el script vive en 01_Scraping/, así que la raíz es la carpeta padre)
+    carpeta_raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     # 2. Entra directamente a 'Data' sin importar el sistema operativo
     RUTA_URLS = os.path.join(carpeta_raiz, "Data", "urls.txt")

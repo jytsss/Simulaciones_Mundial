@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mundial 2026 · Predicciones diarias del modelo</title>
+<meta name="description" content="Probabilidades de ganar, córners, tarjetas y marcador predicho para cada partido del Mundial 2026, generadas con XGBoost y simulación de Monte Carlo.">
+<meta property="og:title" content="Mundial 2026 · Predicciones diarias del modelo">
+<meta property="og:description" content="Probabilidades de victoria, córners y tarjetas de cada partido + cuadro completo hasta la final. XGBoost + 10.000 mundiales simulados.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚽</text></svg>">
+<style>
+:root{--bg:#0d1220;--panel:#161d31;--panel2:#1c2540;--tx:#eef1f8;--tx2:#9aa5c0;--lin:#2a3554;
+--v:#34d399;--e:#fbbf24;--d:#fb7185;--ac:#60a5fa}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{background:var(--bg);color:var(--tx);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:48px}
+.wrap{max-width:980px;margin:0 auto;padding:0 16px}
+nav{position:sticky;top:0;z-index:50;background:rgba(13,18,32,.92);backdrop-filter:blur(8px);
+border-bottom:1px solid var(--lin)}
+nav .wrap{display:flex;gap:4px;overflow-x:auto;padding:10px 16px;-webkit-overflow-scrolling:touch}
+nav a{color:var(--tx2);text-decoration:none;font-size:.85rem;font-weight:600;padding:5px 12px;
+border-radius:999px;white-space:nowrap}
+nav a:hover,nav a:focus{color:var(--tx);background:var(--panel2)}
+header{padding:30px 0 8px;text-align:center}
+header h1{font-size:1.65rem;font-weight:700}
+header p{color:var(--tx2);font-size:.95rem;max-width:640px;margin:8px auto 0}
+.badge{display:inline-block;background:var(--panel2);border:1px solid var(--lin);color:var(--tx2);
+border-radius:999px;padding:2px 12px;font-size:.8rem;margin-top:10px}
+h2{font-size:1.15rem;margin:34px 0 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+h2 small{color:var(--tx2);font-weight:400;font-size:.85rem}
+.fl{width:20px;height:15px;border-radius:2px;vertical-align:-2px;object-fit:cover;background:var(--panel2)}
+.dias{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 10px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.dias::-webkit-scrollbar,nav .wrap::-webkit-scrollbar{display:none}
+nav .wrap{scrollbar-width:none}
+.dias button{flex:0 0 auto;background:var(--panel);border:1px solid var(--lin);color:var(--tx2);
+border-radius:999px;padding:5px 13px;font-size:.83rem;font-weight:600;cursor:pointer}
+.dias button.sel{background:var(--ac);border-color:var(--ac);color:#0d1220}
+.dias button.eshoy:not(.sel){border-color:var(--ac);color:var(--ac)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--lin);border-radius:14px;padding:16px}
+.card.hoy{border-color:var(--ac)}
+.enc{display:flex;justify-content:space-between;align-items:baseline;font-size:.8rem;color:var(--tx2);margin-bottom:8px}
+.eqs{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;font-size:1rem}
+.eqs span{display:flex;align-items:center;gap:6px;min-width:0}
+.eqs span:last-child{justify-content:flex-end;text-align:right}
+.marc{background:var(--panel2);border:1px solid var(--lin);border-radius:10px;padding:2px 10px;font-size:1.05rem;white-space:nowrap}
+.barra{display:flex;height:9px;border-radius:6px;overflow:hidden;margin:12px 0 4px;background:var(--panel2)}
+.barra i{display:block;height:100%}
+.leyenda{display:flex;justify-content:space-between;font-size:.78rem;color:var(--tx2)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;font-size:.8rem}
+.stat{background:var(--panel2);border-radius:10px;padding:8px 10px}
+.stat b{display:block;font-size:.86rem;color:var(--tx)}
+.stat span{color:var(--tx2)}
+.pasado{opacity:.55}
+.etiq{font-size:.72rem;border:1px solid var(--lin);border-radius:6px;padding:1px 6px;color:var(--tx2)}
+.etiq.jugado{border-color:var(--e);color:var(--e)}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th,td{padding:7px 8px;text-align:left;border-bottom:1px solid var(--lin)}
+th{color:var(--tx2);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td .fl{margin-right:5px}
+.vd{color:var(--v)}.em{color:var(--e)}.dr{color:var(--d)}
+details{background:var(--panel);border:1px solid var(--lin);border-radius:12px;margin-bottom:10px;overflow:hidden}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;align-items:center;gap:8px}
+summary::after{content:"+";color:var(--tx2);margin-left:auto}
+details[open] summary::after{content:"–"}
+details .inner{padding:0 16px 14px;overflow-x:auto}
+.subtit{font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--tx2);margin:14px 0 6px;font-weight:600}
+.mcbar{height:8px;background:var(--panel2);border-radius:5px;overflow:hidden;min-width:70px}
+.mcbar i{display:block;height:100%;background:var(--ac)}
+.oculto{display:none}
+.btn{display:block;margin:12px auto 2px;background:var(--panel2);border:1px solid var(--lin);color:var(--tx);
+border-radius:999px;padding:7px 18px;font-size:.85rem;font-weight:600;cursor:pointer}
+.btn:hover{border-color:var(--ac)}
+.aviso{background:var(--panel);border:1px solid var(--lin);border-left:4px solid var(--e);border-radius:0 12px 12px 0;
+padding:14px 16px;font-size:.85rem;color:var(--tx2);margin-top:36px}
+footer{text-align:center;color:var(--tx2);font-size:.8rem;margin-top:30px}
+footer a{color:var(--ac);text-decoration:none}
+.vacio{background:var(--panel);border:1px dashed var(--lin);border-radius:12px;padding:22px;text-align:center;color:var(--tx2);grid-column:1/-1}
+@media(max-width:560px){.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a href="#t-dias">📅 Partidos</a>
+  <a href="#t-mc">🏆 Campeón</a>
+  <a href="#t-grupos">📋 Grupos</a>
+  <a href="#t-cuadro">🗺️ Cuadro</a>
+</div></nav>
+
+<header class="wrap">
+  <h1>⚽ Mundial 2026 — predicciones del modelo</h1>
+  <p>Probabilidades de victoria, córners, tarjetas y marcador más probable para cada partido,
+  generadas con dos modelos XGBoost (goles y resultado 1X2 calibrado) y 10.000 mundiales simulados por Monte Carlo.</p>
+  <span class="badge">Datos regenerados: 13-06-2026 11:47 UTC · la jornada inicial se elige con tu fecha local</span>
+</header>
+
+<main class="wrap">
+  <h2 id="t-dias">📅 Partidos por jornada <small id="sub-dia"></small></h2>
+  <div class="dias" id="dias" role="tablist" aria-label="Elegir jornada"></div>
+  <div id="dia" class="cards"></div>
+
+  <h2 id="t-mc">🏆 Probabilidades de campeón <small>Monte Carlo · 10.000 simulaciones</small></h2>
+  <div class="card"><div style="overflow-x:auto">
+  <table id="tabla-mc"><thead><tr><th>#</th><th>Selección</th><th class="num">Campeón</th><th class="num">Final</th><th class="num">Semis</th><th class="num">Pasa grupos</th><th style="width:26%"></th></tr></thead><tbody></tbody></table>
+  </div>
+  <button class="btn" id="btn-mc" type="button">Ver las 48 selecciones</button></div>
+
+  <h2 id="t-grupos">📋 Fase de grupos <small>partidos + clasificación predicha</small></h2>
+  <div id="grupos"></div>
+
+  <h2 id="t-cuadro">🗺️ Cuadro de eliminatorias predicho <small>resultado más probable de cada cruce</small></h2>
+  <div id="cuadro"></div>
+
+  <div class="aviso"><b>⚠️ Esto son probabilidades, no certezas.</b> El modelo acierta ~65% de los ganadores en datos
+  de prueba; un favorito del 80% pierde 1 de cada 5 veces. Las estimaciones de córners y tarjetas son aproximaciones
+  Poisson sobre las medias de cada selección. Nada de esta página es consejo de apuestas: si juegas, que sea solo
+  entretenimiento, con límites y con dinero que no te duela perder.</div>
+
+  <footer>Generado automáticamente con el modelo de
+  <a href="https://github.com/jytsss/Simulaciones_Mundial">Simulaciones_Mundial</a> · @jyts__</footer>
+</main>
+
+<script>
+const PARTIDOS = [{"fecha": "2026-06-11", "grupo": "A", "local": "México", "visitante": "Sudáfrica", "marcador": "1-0", "p1": 49.6, "px": 29.1, "p2": 21.3, "xgl": 1.56, "xgv": 0.93, "cor": 9.9, "c75": 77, "c85": 66, "c95": 53, "tar": 4.0, "t35": 56, "t45": 37}, {"fecha": "2026-06-12", "grupo": "A", "local": "Corea del Sur", "visitante": "República Checa", "marcador": "1-0", "p1": 43.0, "px": 32.5, "p2": 24.5, "xgl": 1.48, "xgv": 1.17, "cor": 15.0, "c75": 98, "c85": 96, "c95": 93, "tar": 2.7, "t35": 28, "t45": 13}, {"fecha": "2026-06-12", "grupo": "B", "local": "Canadá", "visitante": "Bosnia-Herzegovina", "marcador": "1-0", "p1": 47.3, "px": 32.9, "p2": 19.8, "xgl": 1.65, "xgv": 1.08, "cor": 12.5, "c75": 93, "c85": 88, "c95": 80, "tar": 4.6, "t35": 68, "t45": 49}, {"fecha": "2026-06-13", "grupo": "B", "local": "Catar", "visitante": "Suiza", "marcador": "0-1", "p1": 17.2, "px": 27.9, "p2": 54.8, "xgl": 0.97, "xgv": 1.91, "cor": 7.6, "c75": 49, "c85": 35, "c95": 24, "tar": 3.8, "t35": 54, "t45": 34}, {"fecha": "2026-06-13", "grupo": "D", "local": "EE. UU.", "visitante": "Paraguay", "marcador": "1-0", "p1": 41.5, "px": 33.3, "p2": 25.1, "xgl": 1.59, "xgv": 0.94, "cor": 8.5, "c75": 61, "c85": 48, "c95": 35, "tar": 4.1, "t35": 59, "t45": 39}, {"fecha": "2026-06-14", "grupo": "C", "local": "Brasil", "visitante": "Marruecos", "marcador": "0-1", "p1": 35.3, "px": 28.8, "p2": 36.0, "xgl": 1.35, "xgv": 1.28, "cor": 9.9, "c75": 77, "c85": 65, "c95": 52, "tar": 3.5, "t35": 46, "t45": 28}, {"fecha": "2026-06-14", "grupo": "C", "local": "Haití", "visitante": "Escocia", "marcador": "0-1", "p1": 22.3, "px": 26.2, "p2": 51.4, "xgl": 0.92, "xgv": 1.85, "cor": 9.1, "c75": 69, "c85": 55, "c95": 42, "tar": 3.8, "t35": 52, "t45": 33}, {"fecha": "2026-06-14", "grupo": "D", "local": "Australia", "visitante": "Turquía", "marcador": "0-1", "p1": 31.7, "px": 29.8, "p2": 38.6, "xgl": 1.17, "xgv": 1.58, "cor": 10.3, "c75": 81, "c85": 70, "c95": 58, "tar": 4.4, "t35": 64, "t45": 45}, {"fecha": "2026-06-14", "grupo": "E", "local": "Alemania", "visitante": "Curazao", "marcador": "2-0", "p1": 70.9, "px": 20.1, "p2": 9.0, "xgl": 2.66, "xgv": 0.58, "cor": 11.2, "c75": 87, "c85": 79, "c95": 69, "tar": 3.4, "t35": 43, "t45": 25}, {"fecha": "2026-06-14", "grupo": "F", "local": "Países Bajos", "visitante": "Japón", "marcador": "1-0", "p1": 41.8, "px": 33.8, "p2": 24.4, "xgl": 1.41, "xgv": 1.11, "cor": 12.5, "c75": 93, "c85": 87, "c95": 80, "tar": 2.2, "t35": 19, "t45": 8}, {"fecha": "2026-06-15", "grupo": "E", "local": "Costa de Marfil", "visitante": "Ecuador", "marcador": "1-0", "p1": 39.7, "px": 31.1, "p2": 29.2, "xgl": 1.28, "xgv": 1.12, "cor": 9.7, "c75": 75, "c85": 63, "c95": 51, "tar": 3.0, "t35": 35, "t45": 18}, {"fecha": "2026-06-15", "grupo": "F", "local": "Suecia", "visitante": "Túnez", "marcador": "1-0", "p1": 36.6, "px": 33.1, "p2": 30.3, "xgl": 1.37, "xgv": 1.27, "cor": 10.7, "c75": 84, "c85": 74, "c95": 63, "tar": 3.9, "t35": 55, "t45": 36}, {"fecha": "2026-06-15", "grupo": "G", "local": "Bélgica", "visitante": "Egipto", "marcador": "1-0", "p1": 57.6, "px": 25.4, "p2": 17.1, "xgl": 1.77, "xgv": 0.84, "cor": 10.5, "c75": 82, "c85": 72, "c95": 61, "tar": 2.9, "t35": 33, "t45": 17}, {"fecha": "2026-06-15", "grupo": "H", "local": "España", "visitante": "Cabo Verde", "marcador": "2-0", "p1": 57.1, "px": 28.8, "p2": 14.1, "xgl": 2.42, "xgv": 0.67, "cor": 12.2, "c75": 92, "c85": 86, "c95": 77, "tar": 2.6, "t35": 27, "t45": 12}, {"fecha": "2026-06-16", "grupo": "G", "local": "Irán", "visitante": "Nueva Zelanda", "marcador": "1-0", "p1": 55.8, "px": 29.4, "p2": 14.8, "xgl": 1.8, "xgv": 0.79, "cor": 10.2, "c75": 79, "c85": 68, "c95": 56, "tar": 3.0, "t35": 35, "t45": 18}, {"fecha": "2026-06-16", "grupo": "H", "local": "Arabia Saudí", "visitante": "Uruguay", "marcador": "0-2", "p1": 9.0, "px": 27.7, "p2": 63.3, "xgl": 0.73, "xgv": 2.04, "cor": 8.2, "c75": 58, "c85": 44, "c95": 31, "tar": 4.1, "t35": 58, "t45": 39}, {"fecha": "2026-06-16", "grupo": "I", "local": "Francia", "visitante": "Senegal", "marcador": "1-0", "p1": 50.6, "px": 29.9, "p2": 19.6, "xgl": 1.62, "xgv": 0.98, "cor": 12.6, "c75": 93, "c85": 88, "c95": 81, "tar": 3.7, "t35": 51, "t45": 32}, {"fecha": "2026-06-17", "grupo": "I", "local": "Irak", "visitante": "Noruega", "marcador": "0-1", "p1": 17.9, "px": 24.5, "p2": 57.7, "xgl": 0.92, "xgv": 1.72, "cor": 8.9, "c75": 66, "c85": 53, "c95": 40, "tar": 2.7, "t35": 28, "t45": 13}, {"fecha": "2026-06-17", "grupo": "J", "local": "Argentina", "visitante": "Argelia", "marcador": "1-0", "p1": 54.6, "px": 27.2, "p2": 18.2, "xgl": 1.74, "xgv": 0.82, "cor": 10.3, "c75": 80, "c85": 70, "c95": 57, "tar": 3.9, "t35": 55, "t45": 36}, {"fecha": "2026-06-17", "grupo": "J", "local": "Austria", "visitante": "Jordania", "marcador": "1-0", "p1": 68.0, "px": 22.8, "p2": 9.2, "xgl": 1.98, "xgv": 0.73, "cor": 9.9, "c75": 77, "c85": 65, "c95": 53, "tar": 3.4, "t35": 43, "t45": 25}, {"fecha": "2026-06-17", "grupo": "K", "local": "Portugal", "visitante": "RD Congo", "marcador": "1-0", "p1": 60.3, "px": 22.1, "p2": 17.6, "xgl": 1.87, "xgv": 0.84, "cor": 11.3, "c75": 87, "c85": 79, "c95": 69, "tar": 2.8, "t35": 32, "t45": 16}, {"fecha": "2026-06-17", "grupo": "L", "local": "Inglaterra", "visitante": "Croacia", "marcador": "2-1", "p1": 45.8, "px": 31.8, "p2": 22.4, "xgl": 1.64, "xgv": 1.26, "cor": 13.2, "c75": 95, "c85": 91, "c95": 84, "tar": 2.6, "t35": 27, "t45": 13}, {"fecha": "2026-06-18", "grupo": "A", "local": "República Checa", "visitante": "Sudáfrica", "marcador": "0-1", "p1": 35.1, "px": 29.2, "p2": 35.7, "xgl": 1.28, "xgv": 1.22, "cor": 11.2, "c75": 87, "c85": 79, "c95": 68, "tar": 3.2, "t35": 39, "t45": 21}, {"fecha": "2026-06-18", "grupo": "B", "local": "Suiza", "visitante": "Bosnia-Herzegovina", "marcador": "2-1", "p1": 44.5, "px": 29.2, "p2": 26.3, "xgl": 1.84, "xgv": 1.2, "cor": 8.4, "c75": 60, "c85": 46, "c95": 33, "tar": 4.0, "t35": 57, "t45": 38}, {"fecha": "2026-06-18", "grupo": "K", "local": "Uzbekistán", "visitante": "Colombia", "marcador": "0-1", "p1": 19.6, "px": 27.2, "p2": 53.2, "xgl": 0.91, "xgv": 1.89, "cor": 11.2, "c75": 87, "c85": 78, "c95": 68, "tar": 3.4, "t35": 45, "t45": 26}, {"fecha": "2026-06-18", "grupo": "L", "local": "Ghana", "visitante": "Panamá", "marcador": "0-1", "p1": 21.0, "px": 30.8, "p2": 48.2, "xgl": 1.1, "xgv": 1.51, "cor": 8.0, "c75": 54, "c85": 40, "c95": 28, "tar": 3.6, "t35": 48, "t45": 29}, {"fecha": "2026-06-19", "grupo": "A", "local": "México", "visitante": "Corea del Sur", "marcador": "1-0", "p1": 41.1, "px": 34.6, "p2": 24.3, "xgl": 1.34, "xgv": 1.13, "cor": 13.7, "c75": 96, "c85": 93, "c95": 87, "tar": 3.5, "t35": 46, "t45": 27}, {"fecha": "2026-06-19", "grupo": "B", "local": "Canadá", "visitante": "Catar", "marcador": "1-0", "p1": 44.8, "px": 35.6, "p2": 19.6, "xgl": 1.53, "xgv": 0.91, "cor": 11.8, "c75": 90, "c85": 83, "c95": 74, "tar": 4.4, "t35": 65, "t45": 45}, {"fecha": "2026-06-19", "grupo": "D", "local": "EE. UU.", "visitante": "Australia", "marcador": "1-0", "p1": 38.5, "px": 31.1, "p2": 30.4, "xgl": 1.32, "xgv": 1.01, "cor": 8.8, "c75": 66, "c85": 52, "c95": 39, "tar": 3.1, "t35": 38, "t45": 20}, {"fecha": "2026-06-20", "grupo": "C", "local": "Escocia", "visitante": "Marruecos", "marcador": "0-1", "p1": 19.9, "px": 28.8, "p2": 51.3, "xgl": 1.01, "xgv": 1.87, "cor": 10.0, "c75": 78, "c85": 67, "c95": 54, "tar": 3.0, "t35": 34, "t45": 18}, {"fecha": "2026-06-20", "grupo": "C", "local": "Brasil", "visitante": "Haití", "marcador": "2-0", "p1": 66.2, "px": 19.2, "p2": 14.6, "xgl": 2.49, "xgv": 0.56, "cor": 8.9, "c75": 67, "c85": 54, "c95": 41, "tar": 4.3, "t35": 63, "t45": 43}, {"fecha": "2026-06-20", "grupo": "D", "local": "Turquía", "visitante": "Paraguay", "marcador": "1-0", "p1": 49.0, "px": 28.5, "p2": 22.5, "xgl": 1.63, "xgv": 0.89, "cor": 10.0, "c75": 78, "c85": 66, "c95": 54, "tar": 5.4, "t35": 79, "t45": 63}, {"fecha": "2026-06-20", "grupo": "E", "local": "Alemania", "visitante": "Costa de Marfil", "marcador": "1-0", "p1": 52.5, "px": 28.6, "p2": 18.9, "xgl": 1.6, "xgv": 1.0, "cor": 12.9, "c75": 94, "c85": 89, "c95": 83, "tar": 2.7, "t35": 29, "t45": 14}, {"fecha": "2026-06-20", "grupo": "F", "local": "Países Bajos", "visitante": "Suecia", "marcador": "2-1", "p1": 53.9, "px": 27.8, "p2": 18.3, "xgl": 2.02, "xgv": 1.09, "cor": 11.7, "c75": 90, "c85": 83, "c95": 73, "tar": 2.8, "t35": 30, "t45": 14}, {"fecha": "2026-06-21", "grupo": "E", "local": "Ecuador", "visitante": "Curazao", "marcador": "1-0", "p1": 58.5, "px": 25.7, "p2": 15.8, "xgl": 1.92, "xgv": 0.79, "cor": 8.1, "c75": 56, "c85": 42, "c95": 29, "tar": 3.6, "t35": 49, "t45": 30}, {"fecha": "2026-06-21", "grupo": "F", "local": "Túnez", "visitante": "Japón", "marcador": "0-1", "p1": 18.9, "px": 23.1, "p2": 58.0, "xgl": 0.93, "xgv": 1.57, "cor": 11.5, "c75": 89, "c85": 81, "c95": 71, "tar": 3.4, "t35": 44, "t45": 26}, {"fecha": "2026-06-21", "grupo": "G", "local": "Bélgica", "visitante": "Irán", "marcador": "1-0", "p1": 46.7, "px": 33.2, "p2": 20.1, "xgl": 1.61, "xgv": 1.06, "cor": 11.7, "c75": 89, "c85": 82, "c95": 73, "tar": 3.3, "t35": 41, "t45": 23}, {"fecha": "2026-06-21", "grupo": "H", "local": "España", "visitante": "Arabia Saudí", "marcador": "2-0", "p1": 68.3, "px": 23.9, "p2": 7.9, "xgl": 2.77, "xgv": 0.55, "cor": 10.3, "c75": 81, "c85": 70, "c95": 58, "tar": 3.4, "t35": 45, "t45": 26}, {"fecha": "2026-06-22", "grupo": "G", "local": "Nueva Zelanda", "visitante": "Egipto", "marcador": "0-1", "p1": 16.6, "px": 28.5, "p2": 54.9, "xgl": 0.9, "xgv": 1.61, "cor": 9.0, "c75": 68, "c85": 55, "c95": 41, "tar": 2.6, "t35": 27, "t45": 13}, {"fecha": "2026-06-22", "grupo": "H", "local": "Uruguay", "visitante": "Cabo Verde", "marcador": "1-0", "p1": 49.8, "px": 29.4, "p2": 20.8, "xgl": 1.72, "xgv": 0.85, "cor": 10.1, "c75": 79, "c85": 68, "c95": 56, "tar": 3.2, "t35": 41, "t45": 23}, {"fecha": "2026-06-22", "grupo": "I", "local": "Francia", "visitante": "Irak", "marcador": "2-0", "p1": 70.2, "px": 20.2, "p2": 9.6, "xgl": 2.62, "xgv": 0.58, "cor": 10.2, "c75": 80, "c85": 69, "c95": 57, "tar": 3.0, "t35": 35, "t45": 18}, {"fecha": "2026-06-22", "grupo": "J", "local": "Argentina", "visitante": "Austria", "marcador": "1-0", "p1": 42.9, "px": 32.1, "p2": 25.0, "xgl": 1.77, "xgv": 1.12, "cor": 9.3, "c75": 71, "c85": 58, "c95": 45, "tar": 3.1, "t35": 38, "t45": 20}, {"fecha": "2026-06-23", "grupo": "I", "local": "Noruega", "visitante": "Senegal", "marcador": "0-1", "p1": 28.1, "px": 32.3, "p2": 39.6, "xgl": 1.15, "xgv": 1.67, "cor": 11.3, "c75": 88, "c85": 80, "c95": 70, "tar": 3.4, "t35": 45, "t45": 26}, {"fecha": "2026-06-23", "grupo": "J", "local": "Jordania", "visitante": "Argelia", "marcador": "0-1", "p1": 20.3, "px": 24.0, "p2": 55.6, "xgl": 0.72, "xgv": 1.84, "cor": 10.9, "c75": 85, "c85": 76, "c95": 64, "tar": 4.2, "t35": 60, "t45": 41}, {"fecha": "2026-06-23", "grupo": "K", "local": "Portugal", "visitante": "Uzbekistán", "marcador": "2-0", "p1": 58.3, "px": 25.7, "p2": 16.0, "xgl": 2.16, "xgv": 0.85, "cor": 12.6, "c75": 93, "c85": 88, "c95": 81, "tar": 3.4, "t35": 44, "t45": 26}, {"fecha": "2026-06-23", "grupo": "L", "local": "Inglaterra", "visitante": "Ghana", "marcador": "2-0", "p1": 65.0, "px": 22.9, "p2": 12.1, "xgl": 2.41, "xgv": 0.63, "cor": 11.3, "c75": 87, "c85": 79, "c95": 69, "tar": 2.8, "t35": 32, "t45": 16}, {"fecha": "2026-06-24", "grupo": "B", "local": "Bosnia-Herzegovina", "visitante": "Catar", "marcador": "1-0", "p1": 34.7, "px": 31.9, "p2": 33.4, "xgl": 1.4, "xgv": 1.21, "cor": 8.3, "c75": 58, "c85": 45, "c95": 32, "tar": 5.0, "t35": 74, "t45": 56}, {"fecha": "2026-06-24", "grupo": "B", "local": "Suiza", "visitante": "Canadá", "marcador": "1-0", "p1": 33.7, "px": 32.8, "p2": 33.5, "xgl": 1.44, "xgv": 1.23, "cor": 11.9, "c75": 90, "c85": 84, "c95": 74, "tar": 3.5, "t35": 45, "t45": 27}, {"fecha": "2026-06-24", "grupo": "K", "local": "Colombia", "visitante": "RD Congo", "marcador": "1-0", "p1": 52.4, "px": 26.1, "p2": 21.5, "xgl": 1.6, "xgv": 0.93, "cor": 9.8, "c75": 76, "c85": 65, "c95": 52, "tar": 2.9, "t35": 32, "t45": 16}, {"fecha": "2026-06-24", "grupo": "L", "local": "Panamá", "visitante": "Croacia", "marcador": "0-1", "p1": 18.7, "px": 26.3, "p2": 55.0, "xgl": 0.83, "xgv": 1.96, "cor": 9.9, "c75": 77, "c85": 65, "c95": 52, "tar": 3.4, "t35": 44, "t45": 25}, {"fecha": "2026-06-25", "grupo": "A", "local": "Sudáfrica", "visitante": "Corea del Sur", "marcador": "0-1", "p1": 20.6, "px": 35.9, "p2": 43.4, "xgl": 1.01, "xgv": 1.45, "cor": 13.1, "c75": 95, "c85": 90, "c95": 84, "tar": 3.3, "t35": 43, "t45": 24}, {"fecha": "2026-06-25", "grupo": "A", "local": "República Checa", "visitante": "México", "marcador": "0-1", "p1": 21.3, "px": 27.7, "p2": 51.0, "xgl": 1.08, "xgv": 1.72, "cor": 11.8, "c75": 90, "c85": 83, "c95": 74, "tar": 3.3, "t35": 43, "t45": 24}, {"fecha": "2026-06-25", "grupo": "C", "local": "Marruecos", "visitante": "Haití", "marcador": "2-0", "p1": 62.4, "px": 22.6, "p2": 15.0, "xgl": 2.32, "xgv": 0.54, "cor": 8.7, "c75": 64, "c85": 51, "c95": 38, "tar": 3.8, "t35": 52, "t45": 33}, {"fecha": "2026-06-25", "grupo": "C", "local": "Escocia", "visitante": "Brasil", "marcador": "1-2", "p1": 16.6, "px": 27.9, "p2": 55.5, "xgl": 1.05, "xgv": 2.01, "cor": 10.2, "c75": 80, "c85": 69, "c95": 57, "tar": 3.5, "t35": 46, "t45": 27}, {"fecha": "2026-06-25", "grupo": "E", "local": "Curazao", "visitante": "Costa de Marfil", "marcador": "0-1", "p1": 10.9, "px": 27.1, "p2": 62.1, "xgl": 0.69, "xgv": 1.96, "cor": 10.6, "c75": 83, "c85": 73, "c95": 62, "tar": 2.9, "t35": 32, "t45": 16}, {"fecha": "2026-06-25", "grupo": "E", "local": "Ecuador", "visitante": "Alemania", "marcador": "0-1", "p1": 16.6, "px": 28.4, "p2": 55.0, "xgl": 0.85, "xgv": 1.82, "cor": 10.3, "c75": 81, "c85": 70, "c95": 58, "tar": 3.5, "t35": 46, "t45": 27}, {"fecha": "2026-06-26", "grupo": "D", "local": "Paraguay", "visitante": "Australia", "marcador": "0-1", "p1": 24.4, "px": 30.2, "p2": 45.4, "xgl": 0.95, "xgv": 1.3, "cor": 8.7, "c75": 64, "c85": 50, "c95": 37, "tar": 3.8, "t35": 54, "t45": 34}, {"fecha": "2026-06-26", "grupo": "D", "local": "Turquía", "visitante": "EE. UU.", "marcador": "1-0", "p1": 37.1, "px": 31.5, "p2": 31.5, "xgl": 1.5, "xgv": 1.29, "cor": 10.1, "c75": 79, "c85": 68, "c95": 56, "tar": 4.7, "t35": 69, "t45": 50}, {"fecha": "2026-06-26", "grupo": "F", "local": "Japón", "visitante": "Suecia", "marcador": "1-0", "p1": 55.6, "px": 28.4, "p2": 16.0, "xgl": 1.73, "xgv": 1.11, "cor": 12.3, "c75": 92, "c85": 86, "c95": 78, "tar": 3.4, "t35": 43, "t45": 25}, {"fecha": "2026-06-26", "grupo": "F", "local": "Túnez", "visitante": "Países Bajos", "marcador": "0-1", "p1": 14.6, "px": 26.2, "p2": 59.2, "xgl": 0.89, "xgv": 1.77, "cor": 11.0, "c75": 85, "c85": 76, "c95": 66, "tar": 2.8, "t35": 31, "t45": 15}, {"fecha": "2026-06-26", "grupo": "I", "local": "Noruega", "visitante": "Francia", "marcador": "0-2", "p1": 16.8, "px": 25.8, "p2": 57.4, "xgl": 0.87, "xgv": 2.12, "cor": 11.0, "c75": 86, "c85": 77, "c95": 66, "tar": 2.8, "t35": 30, "t45": 15}, {"fecha": "2026-06-26", "grupo": "I", "local": "Senegal", "visitante": "Irak", "marcador": "1-0", "p1": 59.4, "px": 23.8, "p2": 16.8, "xgl": 1.91, "xgv": 0.7, "cor": 10.5, "c75": 82, "c85": 72, "c95": 60, "tar": 3.6, "t35": 49, "t45": 30}, {"fecha": "2026-06-27", "grupo": "G", "local": "Nueva Zelanda", "visitante": "Bélgica", "marcador": "0-2", "p1": 13.3, "px": 22.4, "p2": 64.3, "xgl": 0.74, "xgv": 2.39, "cor": 13.5, "c75": 96, "c85": 92, "c95": 87, "tar": 2.3, "t35": 20, "t45": 8}, {"fecha": "2026-06-27", "grupo": "G", "local": "Egipto", "visitante": "Irán", "marcador": "0-1", "p1": 24.3, "px": 31.6, "p2": 44.2, "xgl": 0.99, "xgv": 1.4, "cor": 7.2, "c75": 43, "c85": 29, "c95": 19, "tar": 3.6, "t35": 49, "t45": 30}, {"fecha": "2026-06-27", "grupo": "H", "local": "Uruguay", "visitante": "España", "marcador": "0-1", "p1": 16.8, "px": 31.8, "p2": 51.4, "xgl": 0.98, "xgv": 1.87, "cor": 11.8, "c75": 90, "c85": 83, "c95": 74, "tar": 3.1, "t35": 36, "t45": 19}, {"fecha": "2026-06-27", "grupo": "H", "local": "Cabo Verde", "visitante": "Arabia Saudí", "marcador": "1-0", "p1": 41.5, "px": 29.7, "p2": 28.9, "xgl": 1.34, "xgv": 1.05, "cor": 8.6, "c75": 63, "c85": 49, "c95": 36, "tar": 3.6, "t35": 49, "t45": 30}, {"fecha": "2026-06-27", "grupo": "L", "local": "Croacia", "visitante": "Ghana", "marcador": "2-0", "p1": 61.8, "px": 25.9, "p2": 12.3, "xgl": 2.25, "xgv": 0.74, "cor": 11.2, "c75": 87, "c85": 79, "c95": 68, "tar": 3.3, "t35": 42, "t45": 24}, {"fecha": "2026-06-27", "grupo": "L", "local": "Panamá", "visitante": "Inglaterra", "marcador": "0-2", "p1": 11.8, "px": 23.9, "p2": 64.4, "xgl": 0.74, "xgv": 2.14, "cor": 9.9, "c75": 77, "c85": 66, "c95": 53, "tar": 2.9, "t35": 34, "t45": 18}, {"fecha": "2026-06-28", "grupo": "J", "local": "Argelia", "visitante": "Austria", "marcador": "0-1", "p1": 26.7, "px": 32.8, "p2": 40.4, "xgl": 1.18, "xgv": 1.43, "cor": 9.6, "c75": 74, "c85": 62, "c95": 49, "tar": 3.9, "t35": 56, "t45": 36}, {"fecha": "2026-06-28", "grupo": "J", "local": "Jordania", "visitante": "Argentina", "marcador": "0-2", "p1": 8.8, "px": 17.1, "p2": 74.0, "xgl": 0.49, "xgv": 2.66, "cor": 10.5, "c75": 82, "c85": 72, "c95": 61, "tar": 3.3, "t35": 43, "t45": 24}, {"fecha": "2026-06-28", "grupo": "K", "local": "RD Congo", "visitante": "Uzbekistán", "marcador": "1-0", "p1": 37.3, "px": 27.7, "p2": 34.9, "xgl": 1.33, "xgv": 1.06, "cor": 10.5, "c75": 82, "c85": 72, "c95": 60, "tar": 3.2, "t35": 40, "t45": 22}, {"fecha": "2026-06-28", "grupo": "K", "local": "Colombia", "visitante": "Portugal", "marcador": "0-1", "p1": 22.2, "px": 29.8, "p2": 48.0, "xgl": 1.12, "xgv": 1.71, "cor": 11.9, "c75": 91, "c85": 84, "c95": 75, "tar": 3.1, "t35": 37, "t45": 20}];
+const CAMPEON = [{"equipo": "Francia", "r32": 100.0, "octavos": 94.5, "cuartos": 70.5, "semis": 60.2, "final": 39.4, "campeon": 28.6}, {"equipo": "España", "r32": 100.0, "octavos": 78.0, "cuartos": 64.1, "semis": 54.6, "final": 32.6, "campeon": 20.2}, {"equipo": "Inglaterra", "r32": 100.0, "octavos": 93.7, "cuartos": 82.2, "semis": 64.8, "final": 39.4, "campeon": 17.8}, {"equipo": "Argentina", "r32": 100.0, "octavos": 80.2, "cuartos": 70.2, "semis": 52.7, "final": 33.1, "campeon": 16.4}, {"equipo": "Portugal", "r32": 100.0, "octavos": 88.9, "cuartos": 72.6, "semis": 33.7, "final": 13.8, "campeon": 4.0}, {"equipo": "Alemania", "r32": 100.0, "octavos": 89.8, "cuartos": 30.2, "semis": 17.9, "final": 8.5, "campeon": 4.0}, {"equipo": "Bélgica", "r32": 100.0, "octavos": 89.1, "cuartos": 74.6, "semis": 24.3, "final": 7.8, "campeon": 3.0}, {"equipo": "Países Bajos", "r32": 99.9, "octavos": 55.0, "cuartos": 44.6, "semis": 15.5, "final": 6.0, "campeon": 2.3}, {"equipo": "Croacia", "r32": 99.8, "octavos": 80.3, "cuartos": 24.3, "semis": 12.2, "final": 3.5, "campeon": 0.9}, {"equipo": "Brasil", "r32": 100.0, "octavos": 63.4, "cuartos": 41.7, "semis": 11.3, "final": 3.7, "campeon": 0.6}, {"equipo": "Senegal", "r32": 98.4, "octavos": 67.0, "cuartos": 34.8, "semis": 10.7, "final": 3.1, "campeon": 0.5}, {"equipo": "Marruecos", "r32": 99.8, "octavos": 53.1, "cuartos": 33.6, "semis": 7.7, "final": 2.5, "campeon": 0.5}, {"equipo": "Austria", "r32": 99.5, "octavos": 26.1, "cuartos": 10.2, "semis": 3.6, "final": 0.9, "campeon": 0.2}, {"equipo": "México", "r32": 99.6, "octavos": 78.4, "cuartos": 14.4, "semis": 5.1, "final": 1.3, "campeon": 0.2}, {"equipo": "Irán", "r32": 98.2, "octavos": 62.7, "cuartos": 14.8, "semis": 4.6, "final": 1.0, "campeon": 0.2}, {"equipo": "Uruguay", "r32": 99.6, "octavos": 20.2, "cuartos": 11.1, "semis": 3.5, "final": 0.6, "campeon": 0.2}, {"equipo": "Japón", "r32": 99.7, "octavos": 29.8, "cuartos": 14.2, "semis": 2.8, "final": 0.7, "campeon": 0.1}, {"equipo": "Suiza", "r32": 98.8, "octavos": 63.8, "cuartos": 17.2, "semis": 3.4, "final": 0.5, "campeon": 0.1}, {"equipo": "Turquía", "r32": 96.4, "octavos": 54.1, "cuartos": 12.8, "semis": 2.3, "final": 0.3, "campeon": 0.0}, {"equipo": "Noruega", "r32": 92.1, "octavos": 26.4, "cuartos": 6.6, "semis": 1.4, "final": 0.3, "campeon": 0.0}, {"equipo": "Costa de Marfil", "r32": 98.4, "octavos": 31.3, "cuartos": 9.0, "semis": 1.7, "final": 0.3, "campeon": 0.0}, {"equipo": "Colombia", "r32": 99.2, "octavos": 22.4, "cuartos": 6.2, "semis": 1.8, "final": 0.2, "campeon": 0.0}, {"equipo": "EE. UU.", "r32": 88.3, "octavos": 32.0, "cuartos": 3.8, "semis": 0.6, "final": 0.1, "campeon": 0.0}, {"equipo": "Argelia", "r32": 94.7, "octavos": 14.8, "cuartos": 2.8, "semis": 0.4, "final": 0.1, "campeon": 0.0}, {"equipo": "Canadá", "r32": 97.1, "octavos": 52.6, "cuartos": 9.5, "semis": 1.2, "final": 0.1, "campeon": 0.0}, {"equipo": "Corea del Sur", "r32": 91.8, "octavos": 51.7, "cuartos": 9.7, "semis": 0.6, "final": 0.1, "campeon": 0.0}, {"equipo": "Australia", "r32": 86.3, "octavos": 21.7, "cuartos": 3.1, "semis": 0.4, "final": 0.0, "campeon": 0.0}, {"equipo": "Ecuador", "r32": 96.2, "octavos": 18.3, "cuartos": 3.1, "semis": 0.4, "final": 0.0, "campeon": 0.0}, {"equipo": "RD Congo", "r32": 33.6, "octavos": 4.1, "cuartos": 0.7, "semis": 0.1, "final": 0.0, "campeon": 0.0}, {"equipo": "Suecia", "r32": 26.1, "octavos": 3.4, "cuartos": 0.7, "semis": 0.1, "final": 0.0, "campeon": 0.0}, {"equipo": "Cabo Verde", "r32": 20.3, "octavos": 2.5, "cuartos": 0.4, "semis": 0.0, "final": 0.0, "campeon": 0.0}, {"equipo": "República Checa", "r32": 44.2, "octavos": 7.5, "cuartos": 1.0, "semis": 0.0, "final": 0.0, "campeon": 0.0}, {"equipo": "Egipto", "r32": 91.4, "octavos": 14.8, "cuartos": 2.0, "semis": 0.2, "final": 0.0, "campeon": 0.0}, {"equipo": "Sudáfrica", "r32": 39.0, "octavos": 6.6, "cuartos": 0.8, "semis": 0.1, "final": 0.0, "campeon": 0.0}, {"equipo": "Bosnia-Herzegovina", "r32": 42.6, "octavos": 6.2, "cuartos": 0.8, "semis": 0.1, "final": 0.0, "campeon": 0.0}, {"equipo": "Escocia", "r32": 87.4, "octavos": 7.1, "cuartos": 0.6, "semis": 0.0, "final": 0.0, "campeon": 0.0}, {"equipo": "Panamá", "r32": 24.0, "octavos": 2.7, "cuartos": 0.4, "semis": 0.0, "final": 0.0, "campeon": 0.0}, {"equipo": "Túnez", "r32": 12.2, "octavos": 1.7, "cuartos": 0.3, "semis": 0.0, "final": 0.0, "campeon": 0.0}, {"equipo": "Paraguay", "r32": 10.8, "octavos": 1.4, "cuartos": 0.2, "semis": 0.0, "final": 0.0, "campeon": 0.0}, {"equipo": "Uzbekistán", "r32": 8.6, "octavos": 0.8, "cuartos": 0.1, "semis": 0.0, "final": 0.0, "campeon": 0.0}, {"equipo": "Arabia Saudí", "r32": 1.7, "octavos": 0.0, "cuartos": 0.0, "semis": 0.0, "final": 0.0, "campeon": 0.0}, {"equipo": "Catar", "r32": 22.4, "octavos": 1.6, "cuartos": 0.1, "semis": 0.0, "final": 0.0, "campeon": 0.0}, {"equipo": "Curazao", "r32": 0.1, "octavos": 0.0, "cuartos": 0.0, "semis": 0.0, "final": 0.0, "campeon": 0.0}, {"equipo": "Ghana", "r32": 0.6, "octavos": 0.1, "cuartos": 0.0, "semis": 0.0, "final": 0.0, "campeon": 0.0}, {"equipo": "Haití", "r32": 0.5, "octavos": 0.0, "cuartos": 0.0, "semis": 0.0, "final": 0.0, "campeon": 0.0}, {"equipo": "Irak", "r32": 0.2, "octavos": 0.0, "cuartos": 0.0, "semis": 0.0, "final": 0.0, "campeon": 0.0}, {"equipo": "Jordania", "r32": 0.2, "octavos": 0.0, "cuartos": 0.0, "semis": 0.0, "final": 0.0, "campeon": 0.0}, {"equipo": "Nueva Zelanda", "r32": 0.3, "octavos": 0.0, "cuartos": 0.0, "semis": 0.0, "final": 0.0, "campeon": 0.0}];
+const CUADRO = [{"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "Alemania", "visitante": "Ecuador", "marcador": "1-0", "avanza": "Alemania", "p1": 73.6, "px": 19.7, "p2": 6.7}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "Francia", "visitante": "Argelia", "marcador": "1-0", "avanza": "Francia", "p1": 82.5, "px": 14.2, "p2": 3.3}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "Corea del Sur", "visitante": "Canadá", "marcador": "1-1 (pen)", "avanza": "Corea del Sur", "p1": 36.9, "px": 38.6, "p2": 24.5}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "Países Bajos", "visitante": "Brasil", "marcador": "1-2", "avanza": "Brasil", "p1": 33.3, "px": 30.1, "p2": 36.6}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "Colombia", "visitante": "Croacia", "marcador": "0-1", "avanza": "Croacia", "p1": 13.5, "px": 24.0, "p2": 62.5}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "España", "visitante": "Austria", "marcador": "2-1", "avanza": "España", "p1": 53.1, "px": 33.0, "p2": 13.9}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "Turquía", "visitante": "Australia", "marcador": "1-0", "avanza": "Turquía", "p1": 44.0, "px": 26.2, "p2": 29.7}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "Bélgica", "visitante": "Egipto", "marcador": "1-0", "avanza": "Bélgica", "p1": 78.0, "px": 15.2, "p2": 6.8}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "Marruecos", "visitante": "Japón", "marcador": "1-0", "avanza": "Marruecos", "p1": 47.8, "px": 30.9, "p2": 21.3}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "Costa de Marfil", "visitante": "Senegal", "marcador": "0-1", "avanza": "Senegal", "p1": 18.5, "px": 30.3, "p2": 51.2}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "México", "visitante": "Escocia", "marcador": "1-0", "avanza": "México", "p1": 74.7, "px": 19.6, "p2": 5.6}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "Inglaterra", "visitante": "Noruega", "marcador": "2-1", "avanza": "Inglaterra", "p1": 71.4, "px": 19.7, "p2": 9.0}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "Argentina", "visitante": "Uruguay", "marcador": "1-0", "avanza": "Argentina", "p1": 63.5, "px": 24.7, "p2": 11.8}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "EE. UU.", "visitante": "Irán", "marcador": "0-1", "avanza": "Irán", "p1": 24.4, "px": 29.0, "p2": 46.7}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "Suiza", "visitante": "Bosnia-Herzegovina", "marcador": "2-1", "avanza": "Suiza", "p1": 56.1, "px": 24.3, "p2": 19.6}, {"fase": "Dieciseisavos", "fechas": "28 jun - 3 jul", "local": "Portugal", "visitante": "Sudáfrica", "marcador": "1-0", "avanza": "Portugal", "p1": 76.0, "px": 15.8, "p2": 8.2}, {"fase": "Octavos", "fechas": "4 - 7 jul", "local": "Alemania", "visitante": "Francia", "marcador": "1-2", "avanza": "Francia", "p1": 18.9, "px": 33.5, "p2": 47.6}, {"fase": "Octavos", "fechas": "4 - 7 jul", "local": "Corea del Sur", "visitante": "Brasil", "marcador": "0-1", "avanza": "Brasil", "p1": 13.9, "px": 37.8, "p2": 48.3}, {"fase": "Octavos", "fechas": "4 - 7 jul", "local": "Croacia", "visitante": "España", "marcador": "1-2", "avanza": "España", "p1": 11.3, "px": 39.4, "p2": 49.2}, {"fase": "Octavos", "fechas": "4 - 7 jul", "local": "Turquía", "visitante": "Bélgica", "marcador": "1-2", "avanza": "Bélgica", "p1": 12.9, "px": 31.2, "p2": 55.8}, {"fase": "Octavos", "fechas": "4 - 7 jul", "local": "Marruecos", "visitante": "Senegal", "marcador": "0-1", "avanza": "Senegal", "p1": 34.7, "px": 28.9, "p2": 36.5}, {"fase": "Octavos", "fechas": "4 - 7 jul", "local": "México", "visitante": "Inglaterra", "marcador": "0-1", "avanza": "Inglaterra", "p1": 9.4, "px": 17.7, "p2": 72.8}, {"fase": "Octavos", "fechas": "4 - 7 jul", "local": "Argentina", "visitante": "Irán", "marcador": "1-0", "avanza": "Argentina", "p1": 65.6, "px": 24.3, "p2": 10.1}, {"fase": "Octavos", "fechas": "4 - 7 jul", "local": "Suiza", "visitante": "Portugal", "marcador": "1-2", "avanza": "Portugal", "p1": 16.1, "px": 25.0, "p2": 58.9}, {"fase": "Cuartos", "fechas": "9 - 11 jul", "local": "Francia", "visitante": "Brasil", "marcador": "1-0", "avanza": "Francia", "p1": 70.4, "px": 22.7, "p2": 6.9}, {"fase": "Cuartos", "fechas": "9 - 11 jul", "local": "España", "visitante": "Bélgica", "marcador": "2-1", "avanza": "España", "p1": 46.0, "px": 43.8, "p2": 10.1}, {"fase": "Cuartos", "fechas": "9 - 11 jul", "local": "Senegal", "visitante": "Inglaterra", "marcador": "0-1", "avanza": "Inglaterra", "p1": 16.6, "px": 27.4, "p2": 56.0}, {"fase": "Cuartos", "fechas": "9 - 11 jul", "local": "Argentina", "visitante": "Portugal", "marcador": "2-1", "avanza": "Argentina", "p1": 43.0, "px": 38.6, "p2": 18.4}, {"fase": "Semifinales", "fechas": "14 - 15 jul", "local": "Francia", "visitante": "España", "marcador": "1-1 (pen)", "avanza": "Francia", "p1": 31.9, "px": 39.8, "p2": 28.3}, {"fase": "Semifinales", "fechas": "14 - 15 jul", "local": "Inglaterra", "visitante": "Argentina", "marcador": "0-1", "avanza": "Argentina", "p1": 30.3, "px": 34.6, "p2": 35.2}, {"fase": "3er Puesto", "fechas": "18 jul", "local": "España", "visitante": "Inglaterra", "marcador": "1-1 (pen)", "avanza": "España", "p1": 34.6, "px": 40.5, "p2": 24.9}, {"fase": "Final", "fechas": "19 jul", "local": "Francia", "visitante": "Argentina", "marcador": "1-0", "avanza": "Francia", "p1": 41.5, "px": 32.2, "p2": 26.3}];
+const TABLAS = {"A": [{"pos": 1, "equipo": "México", "pts": 9, "dg": 1.48}, {"pos": 2, "equipo": "Corea del Sur", "pts": 6, "dg": 0.54}, {"pos": 3, "equipo": "Sudáfrica", "pts": 3, "dg": -1.13}, {"pos": 4, "equipo": "República Checa", "pts": 0, "dg": -0.89}], "B": [{"pos": 1, "equipo": "Suiza", "pts": 9, "dg": 1.79}, {"pos": 2, "equipo": "Canadá", "pts": 6, "dg": 0.98}, {"pos": 3, "equipo": "Bosnia-Herzegovina", "pts": 3, "dg": -1.02}, {"pos": 4, "equipo": "Catar", "pts": 0, "dg": -1.75}], "C": [{"pos": 1, "equipo": "Marruecos", "pts": 9, "dg": 2.57}, {"pos": 2, "equipo": "Brasil", "pts": 6, "dg": 2.96}, {"pos": 3, "equipo": "Escocia", "pts": 3, "dg": -0.89}, {"pos": 4, "equipo": "Haití", "pts": 0, "dg": -4.64}], "D": [{"pos": 1, "equipo": "Turquía", "pts": 9, "dg": 1.36}, {"pos": 2, "equipo": "EE. UU.", "pts": 6, "dg": 0.75}, {"pos": 3, "equipo": "Australia", "pts": 3, "dg": -0.37}, {"pos": 4, "equipo": "Paraguay", "pts": 0, "dg": -1.74}], "E": [{"pos": 1, "equipo": "Alemania", "pts": 9, "dg": 3.65}, {"pos": 2, "equipo": "Costa de Marfil", "pts": 6, "dg": 0.83}, {"pos": 3, "equipo": "Ecuador", "pts": 3, "dg": -0.0}, {"pos": 4, "equipo": "Curazao", "pts": 0, "dg": -4.48}], "F": [{"pos": 1, "equipo": "Países Bajos", "pts": 9, "dg": 2.11}, {"pos": 2, "equipo": "Japón", "pts": 6, "dg": 0.96}, {"pos": 3, "equipo": "Suecia", "pts": 3, "dg": -1.45}, {"pos": 4, "equipo": "Túnez", "pts": 0, "dg": -1.62}], "G": [{"pos": 1, "equipo": "Bélgica", "pts": 9, "dg": 3.13}, {"pos": 2, "equipo": "Irán", "pts": 6, "dg": 0.87}, {"pos": 3, "equipo": "Egipto", "pts": 3, "dg": -0.63}, {"pos": 4, "equipo": "Nueva Zelanda", "pts": 0, "dg": -3.37}], "H": [{"pos": 1, "equipo": "España", "pts": 9, "dg": 4.86}, {"pos": 2, "equipo": "Uruguay", "pts": 6, "dg": 1.29}, {"pos": 3, "equipo": "Cabo Verde", "pts": 3, "dg": -2.33}, {"pos": 4, "equipo": "Arabia Saudí", "pts": 0, "dg": -3.82}], "I": [{"pos": 1, "equipo": "Francia", "pts": 9, "dg": 3.93}, {"pos": 2, "equipo": "Senegal", "pts": 6, "dg": 1.09}, {"pos": 3, "equipo": "Noruega", "pts": 3, "dg": -0.97}, {"pos": 4, "equipo": "Irak", "pts": 0, "dg": -4.05}], "J": [{"pos": 1, "equipo": "Argentina", "pts": 9, "dg": 3.74}, {"pos": 2, "equipo": "Austria", "pts": 6, "dg": 0.85}, {"pos": 3, "equipo": "Argelia", "pts": 3, "dg": -0.05}, {"pos": 4, "equipo": "Jordania", "pts": 0, "dg": -4.54}], "K": [{"pos": 1, "equipo": "Portugal", "pts": 9, "dg": 2.93}, {"pos": 2, "equipo": "Colombia", "pts": 6, "dg": 1.06}, {"pos": 3, "equipo": "RD Congo", "pts": 3, "dg": -1.43}, {"pos": 4, "equipo": "Uzbekistán", "pts": 0, "dg": -2.56}], "L": [{"pos": 1, "equipo": "Inglaterra", "pts": 9, "dg": 3.56}, {"pos": 2, "equipo": "Croacia", "pts": 6, "dg": 2.26}, {"pos": 3, "equipo": "Panamá", "pts": 3, "dg": -2.12}, {"pos": 4, "equipo": "Ghana", "pts": 0, "dg": -3.7}]};
+const ISO = {"México": "mx", "Sudáfrica": "za", "Corea del Sur": "kr", "República Checa": "cz", "Suiza": "ch", "Bosnia-Herzegovina": "ba", "Canadá": "ca", "Catar": "qa", "Escocia": "gb-sct", "Brasil": "br", "Haití": "ht", "Marruecos": "ma", "Turquía": "tr", "Paraguay": "py", "EE. UU.": "us", "Australia": "au", "Alemania": "de", "Ecuador": "ec", "Costa de Marfil": "ci", "Curazao": "cw", "Suecia": "se", "Países Bajos": "nl", "Túnez": "tn", "Japón": "jp", "Bélgica": "be", "Egipto": "eg", "Irán": "ir", "Nueva Zelanda": "nz", "España": "es", "Uruguay": "uy", "Cabo Verde": "cv", "Arabia Saudí": "sa", "Francia": "fr", "Noruega": "no", "Senegal": "sn", "Irak": "iq", "Austria": "at", "Argentina": "ar", "Argelia": "dz", "Jordania": "jo", "Portugal": "pt", "Colombia": "co", "RD Congo": "cd", "Uzbekistán": "uz", "Croacia": "hr", "Inglaterra": "gb-eng", "Ghana": "gh", "Panamá": "pa"};
+
+const isoLocal = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const HOY = isoLocal(new Date());
+const FECHAS = [...new Set(PARTIDOS.map(p=>p.fecha))].sort();
+const FIN_GRUPOS = FECHAS[FECHAS.length-1];
+
+const fl = eq => ISO[eq] ? `<img class="fl" loading="lazy" alt="" src="https://flagcdn.com/w20/${ISO[eq]}.png" srcset="https://flagcdn.com/w40/${ISO[eq]}.png 2x">` : '';
+function fmtFecha(f){
+  const [y,m,d] = f.split('-');
+  const meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return (+d)+' '+meses[+m-1];
+}
+
+function tarjetaPartido(p){
+  const div = document.createElement('div');
+  div.className = 'card' + (p.fecha === HOY ? ' hoy' : '');
+  const jugado = p.fecha < HOY ? '<span class="etiq jugado">ya jugado</span>' : `<span class="etiq">xG ${p.xgl} – ${p.xgv}</span>`;
+  div.innerHTML = `
+    <div class="enc"><span>Grupo ${p.grupo} · ${fmtFecha(p.fecha)}</span>${jugado}</div>
+    <div class="eqs"><span>${fl(p.local)}${p.local}</span><span class="marc">${p.marcador}</span><span>${p.visitante}${fl(p.visitante)}</span></div>
+    <div class="barra">
+      <i style="width:${p.p1}%;background:var(--v)"></i>
+      <i style="width:${p.px}%;background:var(--e)"></i>
+      <i style="width:${p.p2}%;background:var(--d)"></i>
+    </div>
+    <div class="leyenda"><span class="vd">1 · ${p.p1}%</span><span class="em">X · ${p.px}%</span><span class="dr">2 · ${p.p2}%</span></div>
+    <div class="stats">
+      <div class="stat"><b>⛳ Córners: ${p.cor} esperados</b>
+        <span>+7.5: ${p.c75}% · +8.5: ${p.c85}% · +9.5: ${p.c95}%</span></div>
+      <div class="stat"><b>🟨 Tarjetas: ${p.tar} esperadas</b>
+        <span>+3.5: ${p.t35}% · +4.5: ${p.t45}%</span></div>
+    </div>`;
+  return div;
+}
+
+let fechaSel = FECHAS.includes(HOY) ? HOY : (FECHAS.find(f => f > HOY) || FIN_GRUPOS);
+
+function pintarDia(){
+  const cont = document.getElementById('dia');
+  cont.innerHTML = '';
+  const lista = PARTIDOS.filter(p => p.fecha === fechaSel);
+  document.getElementById('sub-dia').textContent =
+    fechaSel === HOY ? 'hoy · ' + fmtFecha(fechaSel) : fmtFecha(fechaSel);
+  if (!lista.length){
+    const v = document.createElement('div');
+    v.className = 'vacio';
+    v.textContent = 'No hay partidos de grupos este día.';
+    cont.appendChild(v);
+  } else {
+    lista.forEach(p => cont.appendChild(tarjetaPartido(p)));
+  }
+  if (HOY > FIN_GRUPOS){
+    const v = document.createElement('div');
+    v.className = 'vacio';
+    v.innerHTML = 'Fase de grupos terminada: consulta el <a href="#t-cuadro" style="color:var(--ac)">cuadro de eliminatorias predicho</a>. Los cruces reales se conocen al cerrar los grupos.';
+    cont.appendChild(v);
+  }
+  document.querySelectorAll('#dias button').forEach(b => b.classList.toggle('sel', b.dataset.f === fechaSel));
+}
+
+const contD = document.getElementById('dias');
+FECHAS.forEach(f => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.dataset.f = f;
+  b.textContent = f === HOY ? 'HOY · ' + fmtFecha(f) : fmtFecha(f);
+  if (f === HOY) b.classList.add('eshoy');
+  b.onclick = () => { fechaSel = f; pintarDia(); };
+  contD.appendChild(b);
+});
+pintarDia();
+const selBtn = document.querySelector('#dias button.sel');
+if (selBtn) selBtn.scrollIntoView({block:'nearest', inline:'center'});
+
+const tb = document.querySelector('#tabla-mc tbody');
+CAMPEON.forEach((c,i) => {
+  const tr = document.createElement('tr');
+  if (i >= 12) tr.classList.add('oculto','fila-extra');
+  tr.innerHTML = `<td>${i+1}</td><td>${fl(c.equipo)}${c.equipo}</td><td class="num"><b>${c.campeon.toFixed(1)}%</b></td>
+  <td class="num">${c.final.toFixed(1)}%</td><td class="num">${c.semis.toFixed(1)}%</td><td class="num">${c.r32.toFixed(0)}%</td>
+  <td><div class="mcbar"><i style="width:${Math.min(100, c.campeon*3.3)}%"></i></div></td>`;
+  tb.appendChild(tr);
+});
+document.getElementById('btn-mc').onclick = function(){
+  const ocultas = document.querySelectorAll('.fila-extra');
+  const abrir = ocultas[0] && ocultas[0].classList.contains('oculto');
+  ocultas.forEach(f => f.classList.toggle('oculto', !abrir));
+  this.textContent = abrir ? 'Mostrar solo el top 12' : 'Ver las 48 selecciones';
+};
+
+const contG = document.getElementById('grupos');
+[...new Set(PARTIDOS.map(p=>p.grupo))].sort().forEach(g => {
+  const det = document.createElement('details');
+  const filas = PARTIDOS.filter(p=>p.grupo===g).map(p => `
+    <tr class="${p.fecha < HOY ? 'pasado' : ''}">
+      <td>${fmtFecha(p.fecha)}</td><td>${fl(p.local)}${p.local} – ${fl(p.visitante)}${p.visitante}</td><td class="num"><b>${p.marcador}</b></td>
+      <td class="num vd">${p.p1}%</td><td class="num em">${p.px}%</td><td class="num dr">${p.p2}%</td>
+      <td class="num">${p.cor} <span style="color:var(--tx2)">(+7.5: ${p.c75}%)</span></td>
+      <td class="num">${p.tar} <span style="color:var(--tx2)">(+3.5: ${p.t35}%)</span></td>
+    </tr>`).join('');
+  const tabla = (TABLAS[g]||[]).map(t => {
+    const marca = t.pos <= 2 ? ' ✅' : (t.pos === 3 ? ' 🟡' : '');
+    return `<tr><td>${t.pos}</td><td>${fl(t.equipo)}${t.equipo}${marca}</td>
+    <td class="num">${t.pts}</td><td class="num">${t.dg > 0 ? '+' : ''}${t.dg.toFixed(2)}</td></tr>`;
+  }).join('');
+  det.innerHTML = `<summary>Grupo ${g}</summary><div class="inner">
+    <div class="subtit">Partidos</div>
+    <table><thead><tr><th>Fecha</th><th>Partido</th><th class="num">Pred.</th><th class="num">1</th>
+    <th class="num">X</th><th class="num">2</th><th class="num">Córners</th><th class="num">Tarjetas</th></tr></thead>
+    <tbody>${filas}</tbody></table>
+    <div class="subtit">Clasificación predicha <span style="text-transform:none;font-weight:400">(✅ clasifica · 🟡 tercero: pasan los 8 mejores)</span></div>
+    <table><thead><tr><th>#</th><th>Selección</th><th class="num">Pts</th><th class="num">DG (xG)</th></tr></thead>
+    <tbody>${tabla}</tbody></table></div>`;
+  contG.appendChild(det);
+});
+
+const contC = document.getElementById('cuadro');
+[...new Set(CUADRO.map(c=>c.fase))].forEach(f => {
+  const det = document.createElement('details');
+  if (f === 'Final') det.open = true;
+  const filas = CUADRO.filter(c=>c.fase===f).map(c => `
+    <tr><td>${fl(c.local)}${c.local} – ${fl(c.visitante)}${c.visitante}</td><td class="num"><b>${c.marcador}</b></td><td><b>${fl(c.avanza)}${c.avanza}</b></td>
+    <td class="num vd">${c.p1}%</td><td class="num em">${c.px}%</td><td class="num dr">${c.p2}%</td></tr>`).join('');
+  det.innerHTML = `<summary>${f}<span class="etiq" style="margin-left:6px">${CUADRO.find(c=>c.fase===f).fechas}</span></summary>
+    <div class="inner"><table><thead><tr><th>Cruce</th><th class="num">Pred.</th><th>Avanza</th>
+    <th class="num">1</th><th class="num">X</th><th class="num">2</th></tr></thead><tbody>${filas}</tbody></table></div>`;
+  contC.appendChild(det);
+});
+</script>
+</body>
+</html>
